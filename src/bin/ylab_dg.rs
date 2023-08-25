@@ -18,7 +18,6 @@
 // use embassy_time::{Duration, Ticker};
 /// + peripherals
 use embassy_stm32 as hal;
-use hal::gpio::Pin;
 /// + thread-safe data transfer and control
 /// 
 /// + fbuilt-in ADC sensors
@@ -69,12 +68,11 @@ use hal::adc;
 /// 
 /// Adc
 static DEV: [bool; 3] = [true, true, true];
-static HZ: [u64; 3] = [10, 120, 30];
+static HZ: [u64; 3] = [500, 120, 30];
 /// USB
 use embassy_stm32::dma::NoDma;
 use embassy_stm32::usart::{Config, Uart};
 use embassy_stm32::{bind_interrupts, peripherals, usart};
-use heapless::String;
 use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(struct Irqs {
@@ -92,7 +90,7 @@ async fn init(spawner: Spawner) {
 
     if DEV[0]{
         let mut delay = Delay;
-        let mut adc0 = adc::Adc::new(p.ADC1, &mut delay);
+        let adc0 = adc::Adc::new(p.ADC1, &mut delay);
         spawner.spawn(yadc::task(   adc0, 
                                     (p.PA3, p.PC0, p.PC3, p.PC1), 
                                     HZ[0])).unwrap();
@@ -112,8 +110,9 @@ pub use core::sync::atomic::Ordering;
 
 #[embassy_executor::task]
 async fn control_task() { 
-    let mut state = AppState::Send;
-    yadc::RECORD.store(true, Ordering::Relaxed);
+    let _state = AppState::Send;
+    yadc::SAMPLE.store(true, Ordering::Relaxed);
+    
 }
         
 
