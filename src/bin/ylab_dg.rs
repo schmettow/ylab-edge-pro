@@ -68,7 +68,7 @@ use hal::adc;
 /// 
 /// Adc
 static DEV: [bool; 3] = [true, true, true];
-static HZ: [u64; 3] = [500, 120, 30];
+static HZ: [u64; 3] = [500, 500, 30];
 /// USB
 use embassy_stm32::dma::NoDma;
 use embassy_stm32::usart::{Config, Uart};
@@ -80,10 +80,13 @@ bind_interrupts!(struct Irqs {
 });
 use embassy_time::Delay;
 use embassy_executor::Spawner;
+
 #[embassy_executor::main]
-async fn init(spawner: Spawner) {
+async fn main(spawner: Spawner) {
     let p = hal::init(Default::default());
-    let usart = Uart::new(p.USART3, p.PD9, p.PD8, Irqs, p.DMA1_CH3, NoDma, Config::default());
+    let mut config = Config::default();
+    config.baudrate = 4 * 115_200;
+    let usart = Uart::new(p.USART3, p.PD9, p.PD8, Irqs, p.DMA1_CH3, NoDma, config);
     spawner.spawn(ybsu::task(usart)).unwrap();
     spawner.spawn(control_task()).unwrap();
 
@@ -91,8 +94,15 @@ async fn init(spawner: Spawner) {
     if DEV[0]{
         let mut delay = Delay;
         let adc0 = adc::Adc::new(p.ADC1, &mut delay);
-        spawner.spawn(yadc::task(   adc0, 
+        spawner.spawn(yadc::task_0(   adc0, 
                                     (p.PA3, p.PC0, p.PC3, p.PC1), 
+                                    HZ[0])).unwrap();
+    };
+    if DEV[1]{
+        let mut delay = Delay;
+        let adc1 = adc::Adc::new(p.ADC3, &mut delay);
+        spawner.spawn(yadc::task_1(  adc1, 
+                                    (p.PF3, p.PF5, p.PF10, p.PF8), 
                                     HZ[0])).unwrap();
     };
 }

@@ -1,17 +1,10 @@
-/* YLab transport formats  */
-
 pub mod bsu {
-    /* #[derive(Serialize, Deserialize, Debug)]
-    pub enum Sensor {None, Adc1_1}*/
-    use super::super::Sample;
+    pub use super::super::{hal, Sample, Channel, Mutex, Ordering};
 
     // Channel
-    use embassy_sync::channel::Channel;
-    use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
-    pub static SINK: Channel<CriticalSectionRawMutex, Sample, 2> = Channel::new();
+    pub static SINK: Channel<Mutex, Sample, 2> = Channel::new();
     
     // USB
-    use embassy_stm32 as hal;
     use hal::usart::Uart;
     use hal::peripherals;
     

@@ -32,18 +32,19 @@ embassy-usb-logger = { version = "0.1.0" }
 static_cell = "1.2.0"
 fixed = "1.23.1"
 fixed-macro = "1.2.0"
-embedded-hal = "0.2.7"
-embedded-hal-async = "0.2.0-alpha.1"
+# embedded-hal = "0.2.7"
+# embedded-hal-async = "0.2.0-alpha.1"
 heapless = "0.7.16"
 usbd-serial = "0.1.1"
 usb-device = "0.2.9"
 nb = "1.1.0"
 embassy-stm32 = { version = "0.1.0", features = ["nightly", "unstable-traits", "defmt", "stm32f446ze", "unstable-pac", "memory-x", "time-driver-any", "exti", "embedded-sdmmc", "chrono"]}
-postcard = "1.0.6"
+#postcard = "1.0.6"
 itoa = "1.0.9"
 #ryu = "1.0.15"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
-atomic_enum = "0.2.0"
+#atomic_enum = {version = "0.2.0"}
+#atomig = { version = "0.4.0", features = ["derive"]}
 #bincode = "1.3.3"
 
 ## network drivers for cyw43 (pico W) or wiznet w5500
