@@ -1,5 +1,48 @@
+use super::{String, Vec};
+use core::fmt::{Write, Error};
+use super::Sample;
+
+//enum Error{NotImplemented, Send}
+
+trait YtfSend{
+    fn msg_csv(&self) -> Result<Vec<u8, 128>, core::fmt::Error>;
+    fn msg_bin(&self) -> Result<Vec<u8, 128>, core::fmt::Error>;
+}
+
+/// + methods to create YTF data messages
+
+impl YtfSend for Sample {
+    fn msg_csv(&self) -> Result<Vec<u8, 128>, core::fmt::Error>{
+        let mut line: Vec<u8, 128> = Vec::new();
+        match core::write!(&mut line,
+                            "{},{},{},{},{},{},{},{},{},{}\n",
+                            self.time, self.dev, 
+                            self.read[0], self.read[1], 
+                            self.read[2], self.read[3],
+                            self.read[4], self.read[5],
+                            self.read[6], self.read[7]) 
+                            {
+                Ok(_) => return Ok(line),
+                Err(_) => return Err(core::fmt::Error),
+                }
+        //return Ok(line)
+    }
+
+    fn msg_bin(&self) -> Result<Vec<u8, 128>, core::fmt::Error>{
+        let mut out: &str;
+        match postcard::to_vec(&self) {
+            Ok(out) => return Ok(out),
+            Err(_) => return Err(core::fmt::Error),
+        }   
+    }
+}
+
+
 pub mod bsu {
+    //use core::str::from_utf8;
+
     pub use super::super::{hal, Sample, Channel, Mutex, Ordering};
+    use super::YtfSend;
 
     // Channel
     pub static SINK: Channel<Mutex, Sample, 2> = Channel::new();
@@ -7,16 +50,21 @@ pub mod bsu {
     // USB
     use hal::usart::Uart;
     use hal::peripherals;
+    //use heapless::Vec;
     
     #[embassy_executor::task]
     pub async fn task(mut usart: Uart<'static, peripherals::USART3, peripherals::DMA1_CH3>) {
         loop {
-            let sample = SINK.recv().await;
-            let msg = sample.to_csv();
-            usart.write(&msg.as_bytes()).await.unwrap();
+            let sample: Sample = SINK.recv().await;
+            //let msg = sample.to_csv();
+            let msg = sample.msg_csv();
+            match msg {
+                Ok(msg) => {usart.write(&msg).await.unwrap()},
+                Err(_) => {usart.write("ERR".as_bytes()).await.unwrap()},
             }
         }
     }
+}
 
     /* pub mod y2b {
         /* #[derive(Serialize, Deserialize, Debug)]
