@@ -1,6 +1,14 @@
 #![no_std]
 #![no_main]
 #![feature(type_alias_impl_trait)]
+
+/// CONFIGURATION
+/// 
+/// Adc
+static DEV: [bool; 3] = [true, true, true];
+static HZ: [u64; 3] = [600, 600, 30];
+const BAUD: u32 = 2_000_000; 
+
 /// # YLab Edge
 /// 
 /// __YLab Edge Pro__ is a sensor recording firmware for STM32 Nucleo boards.
@@ -63,12 +71,6 @@ enum AppState {Send}
 /// + assigning periphs to tasks
 
 use hal::adc;
-
-/// CONFIGURATION
-/// 
-/// Adc
-static DEV: [bool; 3] = [true, true, true];
-static HZ: [u64; 3] = [500, 500, 30];
 /// USB
 use embassy_stm32::dma::NoDma;
 use embassy_stm32::usart::{Config, Uart};
@@ -85,7 +87,7 @@ use embassy_executor::Spawner;
 async fn main(spawner: Spawner) {
     let p = hal::init(Default::default());
     let mut config = Config::default();
-    config.baudrate = 4 * 115_200;
+    config.baudrate = BAUD;
     let usart = Uart::new(p.USART3, p.PD9, p.PD8, Irqs, p.DMA1_CH3, NoDma, config);
     spawner.spawn(ybsu::task(usart)).unwrap();
     spawner.spawn(control_task()).unwrap();
@@ -94,16 +96,16 @@ async fn main(spawner: Spawner) {
     if DEV[0]{
         let mut delay = Delay;
         let adc0 = adc::Adc::new(p.ADC1, &mut delay);
-        spawner.spawn(yadc::task_0(   adc0, 
-                                    (p.PA3, p.PC0, p.PC3, p.PC1), 
+        spawner.spawn(yadc::adcbank_1(   adc0, 
+                                    (p.PA3, p.PC0, p.PC1, p.PC2, p.PC3, p.PA5, p.PA6, p.PA7), 
                                     HZ[0])).unwrap();
     };
     if DEV[1]{
         let mut delay = Delay;
         let adc1 = adc::Adc::new(p.ADC3, &mut delay);
-        spawner.spawn(yadc::task_1(  adc1, 
-                                    (p.PF3, p.PF5, p.PF10, p.PF8), 
-                                    HZ[0])).unwrap();
+        spawner.spawn(yadc::adcbank_3(  adc1, 
+                                    (p.PF3, p.PF4, p.PF5, p.PF6, p.PF7, p.PF8, p.PF9, p.PF10), 
+                                    HZ[1])).unwrap();
     };
 }
 
