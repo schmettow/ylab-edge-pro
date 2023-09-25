@@ -39,7 +39,7 @@ usbd-serial = "0.1.1"
 usb-device = "0.2.9"
 nb = "1.1.0"
 embassy-stm32 = { version = "0.1.0", features = ["nightly", "unstable-traits", "defmt", "stm32f446ze", "unstable-pac", "memory-x", "time-driver-any", "exti", "embedded-sdmmc", "chrono"]}
-#postcard = "1.0.6"
+postcard = "1.0.6"
 itoa = "1.0.9"
 #ryu = "1.0.15"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
