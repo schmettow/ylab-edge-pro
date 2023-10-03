@@ -4,6 +4,8 @@ use super::Sample;
 
 //enum Error{NotImplemented, Send}
 
+type YtfLine = Vec<u8, 128>;
+
 trait YtfSend{
     fn msg_csv(&self) -> Result<Vec<u8, 128>, core::fmt::Error>;
     fn msg_bin(&self) -> Result<Vec<u8, 128>, core::fmt::Error>;
@@ -12,9 +14,9 @@ trait YtfSend{
 /// + methods to create YTF data messages
 
 impl YtfSend for Sample {
-    fn msg_csv(&self) -> Result<Vec<u8, 128>, core::fmt::Error>{
-        let mut line: Vec<u8, 128> = Vec::new();
-        match core::write!(&mut line,
+    fn msg_csv(&self) -> Result<YtfLine, core::fmt::Error>{
+        let mut msg: YtfLine = Vec::new();
+        match core::write!(&mut msg,
                             "{},{},{},{},{},{},{},{},{},{}\n",
                             self.time, self.dev, 
                             self.read[0], self.read[1], 
@@ -22,18 +24,18 @@ impl YtfSend for Sample {
                             self.read[4], self.read[5],
                             self.read[6], self.read[7]) 
                             {
-                Ok(_) => return Ok(line),
+                Ok(_) => return Ok(msg),
                 Err(_) => return Err(core::fmt::Error),
                 }
         //return Ok(line)
     }
 
-    fn msg_bin(&self) -> Result<Vec<u8, 128>, core::fmt::Error>{
-        let mut out: &str;
-        match postcard::to_vec(&self) {
-            Ok(out) => return Ok(out),
+    fn msg_bin(&self) -> Result<YtfLine, core::fmt::Error>{
+        let line: Result<YtfLine, _> = postcard::to_vec(&self);
+        match line {
+            Ok(msg) => return Ok(msg),
             Err(_) => return Err(core::fmt::Error),
-        }   
+        }
     }
 }
 
@@ -53,11 +55,13 @@ pub mod bsu {
     //use heapless::Vec;
     
     #[embassy_executor::task]
-    pub async fn task(mut usart: Uart<'static, peripherals::USART3, peripherals::DMA1_CH3>) {
+    pub async fn task(mut usart: Uart<'static, 
+                      peripherals::USART3, 
+                      peripherals::DMA1_CH3>) {
         loop {
             let sample: Sample = SINK.recv().await;
-            //let msg = sample.to_csv();
             let msg = sample.msg_csv();
+            //let msg = sample.msg_bin();
             match msg {
                 Ok(msg) => {usart.write(&msg).await.unwrap()},
                 Err(_) => {usart.write("ERR".as_bytes()).await.unwrap()},
