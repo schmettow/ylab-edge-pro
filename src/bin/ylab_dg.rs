@@ -95,15 +95,15 @@ async fn main(spawner: Spawner) {
 
     if DEV[0]{
         let mut delay = Delay;
-        let adc0 = adc::Adc::new(p.ADC1, &mut delay);
-        spawner.spawn(yadc::adcbank_1(   adc0, 
+        let adc1 = adc::Adc::new(p.ADC1, &mut delay);
+        spawner.spawn(yadc::adcbank_1(adc1, 
                                     (p.PA3, p.PC0, p.PC1, p.PC2, p.PC3, p.PA5, p.PA6, p.PA7), 
                                     HZ[0])).unwrap();
     };
     if DEV[1]{
         let mut delay = Delay;
-        let adc1 = adc::Adc::new(p.ADC3, &mut delay);
-        spawner.spawn(yadc::adcbank_3(  adc1, 
+        let adc3 = adc::Adc::new(p.ADC3, &mut delay);
+        spawner.spawn(yadc::adcbank_3(adc3, 
                                     (p.PF3, p.PF4, p.PF5, p.PF6, p.PF7, p.PF8, p.PF9, p.PF10), 
                                     HZ[1])).unwrap();
     };
@@ -124,7 +124,6 @@ pub use core::sync::atomic::Ordering;
 async fn control_task() { 
     let _state = AppState::Send;
     yadc::SAMPLE.store(true, Ordering::Relaxed);
-    
 }
         
 
