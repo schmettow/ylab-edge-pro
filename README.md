@@ -6,8 +6,8 @@ Using CircuitPython, developing sensors for everyday research never was easier.
 The purpose of *YLab Edge* is to follow YLab in spirit, but improve on what Ylab lacks the most, and that is: speed! 
 Highest achieved readings with YLab are in the range of 250 SPS, which is enough for many applications, 
 but is insufficient for large sensor arrays with high sample rates, e.g. motion capture or EEG.
-
 The solution is to re-implement the YLab API in the systems programming language [Rust](https://www.rust-lang.org/). 
+
 **YLab Edge Pro** is the version to use for **STM32** microcontrollers. 
 Currently, Pro is also the most powerful version in terms of channels and throughput.
 However, it is not interactive, like YLab Go.
@@ -25,8 +25,7 @@ A test system with
 
 ## Installing
 
-All code in this crate is currently developed for 
-a `Cytron Maker Pi Pico`. *Note* that the MP Pico is similar to the robotics-oriented Maker Pi RP2040, but not the same. (See [here](https://github.com/9names/makerpi_rp2040), if you have the latter).
+All code in this crate is currently developed for an STM Nucleo-144 F446 board.
 
 To install the latest version of YLab Edge Pro:
 
