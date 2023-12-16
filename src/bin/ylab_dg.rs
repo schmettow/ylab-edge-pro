@@ -5,7 +5,7 @@
 /// CONFIGURATION
 /// 
 /// Adc
-static DEV: [bool; 3] = [true, true, true];
+static DEV: [bool; 3] = [true, false, false];
 static HZ: [u64; 3] = [600, 600, 30];
 const BAUD: u32 = 2_000_000; 
 
