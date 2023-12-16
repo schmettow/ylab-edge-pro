@@ -5,7 +5,7 @@ pub mod adc {
     pub use super::super::{hal, Sample, Channel, Mutex, ytf::bsu as ybsu, Ordering};
     //use hal::adc::Instance;
     use embassy_time::{Duration, Ticker, Instant};
-    use hal::peripherals::{ADC1, PA0, PA1, PA4, PB0, PB1, PC1, PC0, PA5};
+    use hal::peripherals::{ADC1, PA0, PA1, PA4, PB0, PC1, PC0, PC3, PC2};
     //use hal::peripherals::{ADC3, PF3, PF4, PF5, PF6, PF7, PF8, PF9, PF10};
     //use hal::adc::{config::AdcConfig, config::SampleTime, Adc};
     use hal::adc::{Adc, SampleTime};
@@ -25,7 +25,7 @@ pub mod adc {
 
     #[embassy_executor::task]
     pub async fn adcbank_1(mut adc: Adc<'static, ADC1>,
-                    mut pins: (PA0, PA1, PA4, PB0, PB1, PC1, PC0, PA5),
+                    mut pins: (PA0, PA1, PA4, PB0, PC1, PC0, PC3, PC2),
                     hz: u64) {
         //let state: Atomic<super::State> = Atomic::new(State::Offline);
         let mut ticker = Ticker::every(Duration::from_hz(hz));

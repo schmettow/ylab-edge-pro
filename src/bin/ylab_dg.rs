@@ -97,7 +97,7 @@ async fn main(spawner: Spawner) {
         let mut delay = Delay;
         let adc1 = adc::Adc::new(p.ADC1, &mut delay);
         spawner.spawn(yadc::adcbank_1(adc1, 
-                                    (p.PA0, p.PA1, p.PA4, p.PB0, p.PB1, p.PC1, p.PC0, p.PA5), 
+                                    (p.PA0, p.PA1, p.PA4, p.PB0, p.PC1, p.PC0, p.PC3, p.PC2), 
                                     HZ[0])).unwrap();
     };
 }
