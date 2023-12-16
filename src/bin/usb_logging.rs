@@ -8,8 +8,6 @@
 #![feature(type_alias_impl_trait)]
 
 use {defmt_rtt as _, panic_probe as _};
-//use core::fmt::Write;
-use defmt::*;
 use embassy_executor::Spawner;
 
 use embassy_time::{Instant, Duration, Ticker};
@@ -22,22 +20,40 @@ use hal::{bind_interrupts, peripherals, usart};
 //use heapless::String;
 use {defmt_rtt as _, panic_probe as _};
 
-type Measure = (Instant, [u32; 1]);
-use embassy_sync::channel::Channel;
-use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
-pub static SINK: Channel<CriticalSectionRawMutex, Measure, 2> = Channel::new();
-use itoa;
+mod bsu{
+    /* #[derive(Serialize, Deserialize, Debug)]
+    pub enum Sensor {None, Adc1_1}*/
 
-#[embassy_executor::task]
-pub async fn bsu_task(mut usart: Uart<'static, peripherals::USART3, peripherals::DMA1_CH3>) {
-    let mut i2a = itoa::Buffer::new();
-    loop {
-        let measure = SINK.recv().await;
-        let reading = measure.1[0];
-        let encoded = reading.to_ne_bytes();
-        //let encoded = bincode::serialize(&measure).unwrap();
-        // let encoded = i2a.format(measure.1[0]).as_bytes();
-        usart.write(&encoded).await.unwrap();
+    // data handling
+    use serde::{Serialize, Deserialize};
+    use postcard::to_vec;
+    use heapless::Vec;
+
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct Obs {
+        pub dev: i8,
+        pub time: i32,
+        pub read: [u32;1],
+    }
+
+    // Channel
+    use embassy_sync::channel::Channel;
+    use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
+    pub static SINK: Channel<CriticalSectionRawMutex, Obs, 2> = Channel::new();
+    
+    // USB
+    use embassy_stm32 as hal;
+    use hal::usart::{Uart};
+    use hal::{peripherals};
+    
+    #[embassy_executor::task]
+    pub async fn task(mut usart: Uart<'static, peripherals::USART3, peripherals::DMA1_CH3>) {
+        loop {
+            let obs = SINK.recv().await;
+            let ser: Vec<u8, 9> =   to_vec(&obs).unwrap();
+            usart.write(&ser).await.unwrap();
+            usart.write("\n".as_bytes()).await.unwrap();
+            }
         }
     }
 
@@ -51,13 +67,17 @@ async fn init(spawner: Spawner) {
         USART3 => usart::InterruptHandler<peripherals::USART3>;
     });
     let usart = Uart::new(p.USART3, p.PD9, p.PD8, Irqs, p.DMA1_CH3, NoDma, Config::default());
-    spawner.spawn(bsu_task(usart)).unwrap();
+    spawner.spawn(bsu::task(usart)).unwrap();
 
     let mut counter = 0;
     let mut ticker = Ticker::every(Duration::from_millis(500));
     loop {
         ticker.next().await;
         counter += 1;
-        SINK.send((Instant::now(), [counter])).await;
+        let obs = bsu::Obs{  
+                        dev: 0, 
+                        time: Instant::now().as_micros() as i32, 
+                        read: [counter]};
+        bsu::SINK.send(obs).await;
     }
 }
