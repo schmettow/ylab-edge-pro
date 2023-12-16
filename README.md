@@ -10,14 +10,15 @@ The solution is to re-implement the YLab API in the systems programming language
 
 **YLab Edge Pro** is the version to use for **STM32** microcontrollers. 
 Currently, Pro is also the most powerful version in terms of channels and throughput.
-However, it is not interactive, like YLab Go.
+However, it is not interactive, like [YLab Edge Go](https://github.com/schmettow/ylab-edge-go).
 
 # Current status
 
 Currenty, the following devices are implemented using [Embassy]: https://embassy.dev/. All devices are running in their own async task.
 
-+ LED
++ LED control
 + on-board ADC channels
++ USART data transfer
 
 A test system with 
 
@@ -25,7 +26,8 @@ A test system with
 
 ## Installing
 
-All code in this crate is currently developed for an STM Nucleo-144 F446 board.
+All code in this crate is currently developed for *STM Nucleo devices with an F446* MCU.
+This is *branch Nucleo64*, using the Nucleo-64 board with an F446RE MCU.
 
 To install the latest version of YLab Edge Pro:
 

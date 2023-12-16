@@ -78,7 +78,7 @@ use embassy_stm32::{bind_interrupts, peripherals, usart};
 use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(struct Irqs {
-    USART3 => usart::InterruptHandler<peripherals::USART3>;
+    USART2 => usart::InterruptHandler<peripherals::USART2>;
 });
 use embassy_time::Delay;
 use embassy_executor::Spawner;
@@ -88,7 +88,7 @@ async fn main(spawner: Spawner) {
     let p = hal::init(Default::default());
     let mut config = Config::default();
     config.baudrate = BAUD;
-    let usart = Uart::new(p.USART3, p.PD9, p.PD8, Irqs, p.DMA1_CH3, NoDma, config);
+    let usart = Uart::new(p.USART2, p.PA3, p.PA2, Irqs, p.DMA1_CH6, NoDma, config);
     spawner.spawn(ybsu::task(usart)).unwrap();
     spawner.spawn(control_task()).unwrap();
 
@@ -97,15 +97,8 @@ async fn main(spawner: Spawner) {
         let mut delay = Delay;
         let adc1 = adc::Adc::new(p.ADC1, &mut delay);
         spawner.spawn(yadc::adcbank_1(adc1, 
-                                    (p.PA3, p.PC0, p.PC1, p.PC2, p.PC3, p.PA5, p.PA6, p.PA7), 
+                                    (p.PA0, p.PA1, p.PA4, p.PB0, p.PB1, p.PC1, p.PC0, p.PA5), 
                                     HZ[0])).unwrap();
-    };
-    if DEV[1]{
-        let mut delay = Delay;
-        let adc3 = adc::Adc::new(p.ADC3, &mut delay);
-        spawner.spawn(yadc::adcbank_3(adc3, 
-                                    (p.PF3, p.PF4, p.PF5, p.PF6, p.PF7, p.PF8, p.PF9, p.PF10), 
-                                    HZ[1])).unwrap();
     };
 }
 

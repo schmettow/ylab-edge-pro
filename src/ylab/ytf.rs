@@ -56,8 +56,8 @@ pub mod bsu {
     
     #[embassy_executor::task]
     pub async fn task(mut usart: Uart<'static, 
-                      peripherals::USART3, 
-                      peripherals::DMA1_CH3>) {
+                      peripherals::USART2, 
+                      peripherals::DMA1_CH6>) {
         loop {
             let sample: Sample = SINK.recv().await;
             let msg = sample.msg_csv();
