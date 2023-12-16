@@ -46,7 +46,7 @@ pub mod adc {
                                 adc.read(&mut pins.6),
                                 adc.read(&mut pins.7),];
                     sample = Sample{dev: 0, 
-                                    time: Instant::now().as_millis() as i32, 
+                                    time: Instant::now().as_micros() as i32, 
                                     read: reading};
                     ybsu::SINK.send(sample).await;
                 }
@@ -77,7 +77,7 @@ pub mod adc {
                                 adc.read(&mut pins.7),];
                     //reading = [2,9,1,2];
                     sample = Sample{dev: DEV, 
-                                    time: Instant::now().as_millis() as i32, 
+                                    time: Instant::now().as_micros() as i32, 
                                     read: reading};
                     ybsu::SINK.send(sample).await;
                 }
