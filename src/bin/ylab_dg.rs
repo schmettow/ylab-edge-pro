@@ -1,6 +1,6 @@
 #![no_std]
 #![no_main]
-#![feature(type_alias_impl_trait)]
+
 
 /// CONFIGURATION
 /// 
@@ -89,7 +89,10 @@ async fn main(spawner: Spawner) {
     let mut config = Config::default();
     config.baudrate = BAUD;
     let usart = Uart::new(p.USART2, p.PA3, p.PA2, Irqs, p.DMA1_CH6, NoDma, config);
-    spawner.spawn(ybsu::task(usart)).unwrap();
+    match usart {
+        Ok(usart) => spawner.spawn(ybsu::task(usart)).unwrap(),
+        Err(_)  => {},
+    }
     spawner.spawn(control_task()).unwrap();
 
 

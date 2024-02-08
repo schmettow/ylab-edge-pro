@@ -1,5 +1,5 @@
-use super::{String, Vec};
-use core::fmt::{Write, Error};
+use super::Vec;
+use core::fmt::Write;
 use super::Sample;
 
 //enum Error{NotImplemented, Send}
@@ -7,12 +7,11 @@ use super::Sample;
 type YtfLine = Vec<u8, 128>;
 
 trait YtfSend{
-    fn msg_csv(&self) -> Result<Vec<u8, 128>, core::fmt::Error>;
-    fn msg_bin(&self) -> Result<Vec<u8, 128>, core::fmt::Error>;
+    fn msg_csv(&self) -> Result<YtfLine, core::fmt::Error>;
+    fn msg_bin(&self) -> Result<YtfLine, core::fmt::Error>;
 }
 
 /// + methods to create YTF data messages
-
 impl YtfSend for Sample {
     fn msg_csv(&self) -> Result<YtfLine, core::fmt::Error>{
         let mut msg: YtfLine = Vec::new();
@@ -24,18 +23,15 @@ impl YtfSend for Sample {
                             self.read[4], self.read[5],
                             self.read[6], self.read[7]) 
                             {
-                Ok(_) => return Ok(msg),
-                Err(_) => return Err(core::fmt::Error),
-                }
-        //return Ok(line)
+                            Ok(_) => return Ok(msg),
+                            Err(_) => return Err(core::fmt::Error),
+                            }
     }
+        //return Ok(line)
+    
 
     fn msg_bin(&self) -> Result<YtfLine, core::fmt::Error>{
-        let line: Result<YtfLine, _> = postcard::to_vec(&self);
-        match line {
-            Ok(msg) => return Ok(msg),
-            Err(_) => return Err(core::fmt::Error),
-        }
+        todo!()
     }
 }
 
@@ -59,7 +55,7 @@ pub mod bsu {
                       peripherals::USART2, 
                       peripherals::DMA1_CH6>) {
         loop {
-            let sample: Sample = SINK.recv().await;
+            let sample: Sample = SINK.receive().await;
             let msg = sample.msg_csv();
             //let msg = sample.msg_bin();
             match msg {

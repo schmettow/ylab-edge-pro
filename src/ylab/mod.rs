@@ -11,10 +11,9 @@ pub use embassy_sync::channel::Channel;
 pub use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex as Mutex;
 pub use core::sync::atomic::Ordering as Ordering;
 /// + common classes for samples from BOS:
-use heapless::{String,Vec};
-//use postcard;
-use serde::{Serialize, Deserialize};
-#[derive(Debug, Deserialize, Serialize)]
+use heapless::Vec;
+//use serde::{Serialize, Deserialize};
+#[derive(Debug,Eq, PartialEq)]
 pub struct Sample {
     pub dev: i8,
     pub time: i32,
