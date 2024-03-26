@@ -28,10 +28,11 @@ const BAUD: u32 = 2_000_000;
 use embassy_stm32 as hal;
 /// + thread-safe data transfer and control
 /// 
+use ylab::*;
 /// + fbuilt-in ADC sensors
 use ylab::ysns::adc as yadc;
 /// + data transport/storage
-use ylab::ytf::bsu as ybsu;
+use ylab::ytfk::bsu as ybsu;
 
 
 /// ## UI task
@@ -101,7 +102,7 @@ async fn main(spawner: Spawner) {
         let adc1 = adc::Adc::new(p.ADC1, &mut delay);
         spawner.spawn(yadc::adcbank_1(adc1, 
                                     (p.PA0, p.PA1, p.PA4, p.PB0, p.PC1, p.PC0, p.PC3, p.PC2), 
-                                    HZ[0])).unwrap();
+                                    HZ[0], 0)).unwrap();
     };
 }
 
@@ -114,12 +115,12 @@ async fn main(spawner: Spawner) {
 /// 
 /// 
 
-pub use core::sync::atomic::Ordering;
+//pub use core::sync::atomic::Ordering;
 
 #[embassy_executor::task]
 async fn control_task() { 
     let _state = AppState::Send;
-    yadc::SAMPLE.store(true, Ordering::Relaxed);
+    yadc::SAMPLE.store(true, RLX);
 }
         
 
