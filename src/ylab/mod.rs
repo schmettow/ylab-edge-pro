@@ -1,32 +1,44 @@
 #![no_std]
-#![feature(type_alias_impl_trait)]
 
-/// # YLab Edge Pro
-/// provides methods to run *banks of sensors (BOS)* concurrently.
-/// 
-/// + STM32 (Nucleo) boards
 pub use embassy_stm32 as hal;
-/// + asynchronous data exchange
+pub use embassy_time as time;
+pub use time::{Duration, Ticker, Timer, Instant, Delay};
+pub use heapless::{Vec, String};
+pub use embassy_sync::mutex::Mutex as Mutex;
+pub use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex as RawMutex;
+pub use embassy_sync::signal::Signal;
 pub use embassy_sync::channel::Channel;
-pub use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex as Mutex;
-pub use core::sync::atomic::Ordering as Ordering;
-/// + common classes for samples from BOS:
-use heapless::Vec;
-//use serde::{Serialize, Deserialize};
+
+pub use core::sync::atomic::Ordering;
+pub static RLX: Ordering = Ordering::Relaxed;
+pub use core::sync::atomic::AtomicBool;
+
+pub use defmt::println;
+
+
+/*use core::fmt;
+use fmt::Display;
+use fmt::Write;*/
+
+
+pub mod ysns; // Ylab sensors
+//pub mod yuio; // YLab UI Output
+//pub mod yuii; // YLab UI Input
+pub mod ytfk; // YLab transfer formats & kodices
+
+/*
 #[derive(Debug,Eq, PartialEq)]
-pub struct Sample {
-    pub dev: i8,
-    pub time: i32,
-    pub read: [u16;8],
+pub struct SensorResult<R> {
+    pub time: Instant,
+    pub reading: R,
+}
+ */
+
+#[derive(Debug,Eq, PartialEq)]
+pub struct Sample<T> {
+    pub sensory: u8,
+    pub time: Instant,
+    pub read: T,
 }
 
-        
-/// ## Sub modules
-/// 
-/// + sensor banks
-pub mod ysns;
-/// + data transfer
-pub mod ytf;
-// /// + (limited) UI support 
-// pub mod yuio; // YLab UI Output
-// pub mod yuii; // YLab UI Input
+
