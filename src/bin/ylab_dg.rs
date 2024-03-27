@@ -5,8 +5,8 @@
 /// CONFIGURATION
 /// 
 /// Adc
-static DEV: [bool; 3] = [true, false, false];
-static HZ: [u64; 3] = [600, 600, 30];
+static DEV: [bool; 3] = [true, true, false];
+static HZ: [u64; 3] = [2, 3, 4];
 const BAUD: u32 = 2_000_000; 
 
 /// # YLab Edge
@@ -29,8 +29,9 @@ use embassy_stm32 as hal;
 /// + thread-safe data transfer and control
 /// 
 use ylab::*;
-/// + fbuilt-in ADC sensors
+/// + built-in sensor arrays
 use ylab::ysns::adc as yadc;
+use ylab::ysns::moi as moi;
 /// + data transport/storage
 use ylab::ytfk::bsu as ybsu;
 
@@ -72,6 +73,7 @@ enum AppState {Send}
 /// + assigning periphs to tasks
 
 use hal::adc;
+use hal::exti::ExtiInput;
 /// USB
 use embassy_stm32::dma::NoDma;
 use embassy_stm32::usart::{Config, Uart};
@@ -92,17 +94,25 @@ async fn main(spawner: Spawner) {
     let usart = Uart::new(p.USART2, p.PA3, p.PA2, Irqs, p.DMA1_CH6, NoDma, config);
     match usart {
         Ok(usart) => spawner.spawn(ybsu::task(usart)).unwrap(),
-        Err(_)  => {},
+        Err(_)  => {println!("USART connection failed")},
     }
     spawner.spawn(control_task()).unwrap();
 
-
     if DEV[0]{
+        let moi_0 
+            = ExtiInput::new(moi::Input::new(p.PA10, moi::Pull::Down), p.EXTI10);
+        let moi_1 
+            = ExtiInput::new(moi::Input::new(p.PB3, moi::Pull::Down), p.EXTI3);
+        spawner.spawn( 
+            ysns::moi::task(moi_0, moi_1, 0)
+        ).unwrap();
+    };
+    if DEV[1]{
         let mut delay = Delay;
         let adc1 = adc::Adc::new(p.ADC1, &mut delay);
         spawner.spawn(yadc::adcbank_1(adc1, 
                                     (p.PA0, p.PA1, p.PA4, p.PB0, p.PC1, p.PC0, p.PC3, p.PC2), 
-                                    HZ[0], 0)).unwrap();
+                                    HZ[1], 1)).unwrap();
     };
 }
 
@@ -121,6 +131,7 @@ async fn main(spawner: Spawner) {
 async fn control_task() { 
     let _state = AppState::Send;
     yadc::SAMPLE.store(true, RLX);
+    moi::SAMPLE.store(true, RLX);
 }
         
 
