@@ -6,6 +6,60 @@ pub use super::ytfk::bsu as ybsu;
 pub use ytfk::Ytf;
 use hal::i2c;
 
+pub mod moi {
+    use super::*;
+    pub use hal::peripherals::{PA10, PB3, PB5, PB4}; // D2 .. D5
+    pub use hal::gpio::{Input, Pull};
+
+    pub type Reading = [bool; 2];
+    pub type Sample = crate::Sample<Reading>;
+    
+    /* result channel */
+    //pub static RESULT: Signal<RawMutex, Sample>  = Signal::new();
+
+    /* trigger channel */
+    pub static TRIGGER: Channel<RawMutex, Sample, 2> = Channel::new();
+    
+    /* control channels */
+    pub static READY: AtomicBool = AtomicBool::new(false);
+    pub static SAMPLE: AtomicBool = AtomicBool::new(true);
+    
+    #[embassy_executor::task]
+    pub async fn task(mut moi_0: ExtiInput<'static, PA10>, mut moi_1: ExtiInput<'static, PB3>, sensory: u8) {
+    //pub async fn task(pins: [AnyPin; 4], trigger: [(bool, Option<bool>); 4], hz: u64, sensory: u8) {
+        println!("Starting MOI task");
+        let mut sample: Sample; 
+        let mut reading: Reading;
+        use embassy_futures::select::select;
+        loop {
+            if SAMPLE.load(RLX){
+                println!("MOI: await");
+                select( moi_0.wait_for_any_edge(), 
+                        moi_1.wait_for_any_edge()).await;
+                println!("Event detected");
+                reading = [moi_0.get_level().into(), moi_1.get_level().into()];
+                sample = Sample{
+                            sensory: sensory,
+                            time: Instant::now(), 
+                            read: reading};
+                
+                ybsu::SINK.send(to_ytf(sample.clone())).await;
+                TRIGGER.send(sample).await;
+                };
+            }                
+        }
+
+
+        pub fn to_ytf(sample: Sample) -> ytfk::Ytf {
+            Ytf { sensory: sample.sensory, 
+                    time: sample.time, 
+                    read: [ Some(sample.read[0].into()), 
+                            Some(sample.read[1].into()),
+                            None,None, None, None, None, None] }
+        }
+    }
+   
+
 
 pub mod yco2 {
     use super::*;
@@ -74,6 +128,7 @@ pub mod yco2 {
         }
     }
 
+
 pub mod adc {
     pub use super::*;
     pub use super::super::{hal, Channel, Mutex, ytfk::bsu as ybsu, Ordering};
@@ -110,6 +165,7 @@ pub mod adc {
                     mut pins: (PA0, PA1, PA4, PB0, PC1, PC0, PC3, PC2),
                     hz: u64,
                     sensory: u8) {
+        println!("Starting ADC task");
         //let state: Atomic<super::State> = Atomic::new(State::Offline);
         let mut ticker = Ticker::every(Duration::from_hz(hz));
         let mut _vrefint = adc.enable_vrefint();
@@ -117,22 +173,23 @@ pub mod adc {
         let mut sample: Sample;
         adc.set_sample_time(SampleTime::Cycles3);
         adc.set_resolution(hal::adc::Resolution::TwelveBit);
+        //println!("ADC set");
         loop {
             if SAMPLE.load(RLX){
-                    let reading =  
-                               [adc.read(&mut pins.0), 
-                                adc.read(&mut pins.1),
-                                adc.read(&mut pins.2),
-                                adc.read(&mut pins.3),
-                                adc.read(&mut pins.4), 
-                                adc.read(&mut pins.5),
-                                adc.read(&mut pins.6),
-                                adc.read(&mut pins.7),];
-                    sample = Sample{sensory: sensory, time: Instant::now(), 
-                                    read: reading};
-                    ybsu::SINK.send(to_ytf(sample)).await;
+                let reading =  
+                    [adc.read(&mut pins.0), 
+                    adc.read(&mut pins.1),
+                    adc.read(&mut pins.2),
+                    adc.read(&mut pins.3),
+                    adc.read(&mut pins.4), 
+                    adc.read(&mut pins.5),
+                    adc.read(&mut pins.6),
+                    adc.read(&mut pins.7),];
+                sample = Sample{sensory: sensory, time: Instant::now(), 
+                                read: reading};
+                ybsu::SINK.send(to_ytf(sample)).await;
                 };
-                ticker.next().await;
+            ticker.next().await;
             }                
         }
     }
