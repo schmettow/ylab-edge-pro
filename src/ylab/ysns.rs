@@ -44,7 +44,7 @@ pub mod moi {
                             read: reading};
                 
                 ybsu::SINK.send(to_ytf(sample.clone())).await;
-                TRIGGER.send(sample).await;
+                // TRIGGER.send(sample).await; <----- Makes it hang
                 };
             }                
         }
