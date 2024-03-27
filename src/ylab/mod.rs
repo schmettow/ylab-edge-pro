@@ -1,6 +1,7 @@
 #![no_std]
 
 pub use embassy_stm32 as hal;
+pub use hal::exti::ExtiInput;
 pub use embassy_time as time;
 pub use time::{Duration, Ticker, Timer, Instant, Delay};
 pub use heapless::{Vec, String};
@@ -34,7 +35,7 @@ pub struct SensorResult<R> {
 }
  */
 
-#[derive(Debug,Eq, PartialEq)]
+#[derive(Debug,Eq, PartialEq, Clone)]
 pub struct Sample<T> {
     pub sensory: u8,
     pub time: Instant,
