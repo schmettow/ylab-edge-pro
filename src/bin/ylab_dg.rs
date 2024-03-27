@@ -81,7 +81,7 @@ use embassy_stm32::{bind_interrupts, peripherals, usart};
 use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(struct Irqs {
-    USART2 => usart::InterruptHandler<peripherals::USART2>;
+    USART3 => usart::InterruptHandler<peripherals::USART3>;
 });
 use embassy_time::Delay;
 use embassy_executor::Spawner;
@@ -91,7 +91,7 @@ async fn main(spawner: Spawner) {
     let p = hal::init(Default::default());
     let mut config = Config::default();
     config.baudrate = BAUD;
-    let usart = Uart::new(p.USART2, p.PA3, p.PA2, Irqs, p.DMA1_CH6, NoDma, config);
+    let usart = Uart::new(p.USART3, p.PD9, p.PD8, Irqs, p.DMA1_CH3, NoDma, config);
     match usart {
         Ok(usart) => spawner.spawn(ybsu::task(usart)).unwrap(),
         Err(_)  => {println!("USART connection failed")},
@@ -100,9 +100,9 @@ async fn main(spawner: Spawner) {
 
     if DEV[0]{
         let moi_0 
-            = ExtiInput::new(moi::Input::new(p.PA10, moi::Pull::Down), p.EXTI10);
+            = ExtiInput::new(moi::Input::new(p.PF15, moi::Pull::Up), p.EXTI15);
         let moi_1 
-            = ExtiInput::new(moi::Input::new(p.PB3, moi::Pull::Down), p.EXTI3);
+            = ExtiInput::new(moi::Input::new(p.PF13, moi::Pull::Up), p.EXTI13);
         spawner.spawn( 
             ysns::moi::task(moi_0, moi_1, 0)
         ).unwrap();
@@ -111,7 +111,7 @@ async fn main(spawner: Spawner) {
         let mut delay = Delay;
         let adc1 = adc::Adc::new(p.ADC1, &mut delay);
         spawner.spawn(yadc::adcbank_1(adc1, 
-                                    (p.PA0, p.PA1, p.PA4, p.PB0, p.PC1, p.PC0, p.PC3, p.PC2), 
+                                    (p.PA3, p.PC0, p.PC3), 
                                     HZ[1], 1)).unwrap();
     };
 }
