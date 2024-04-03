@@ -6,7 +6,7 @@
 /// 
 /// Adc
 static DEV: [bool; 3] = [true, true, false];
-static HZ: [u64; 3] = [2, 3, 4];
+static HZ: [u64; 3] = [0, 250, 0];
 const BAUD: u32 = 2_000_000; 
 
 /// # YLab Edge
@@ -91,7 +91,11 @@ async fn main(spawner: Spawner) {
     let p = hal::init(Default::default());
     let mut config = Config::default();
     config.baudrate = BAUD;
-    let usart = Uart::new(p.USART2, p.PA3, p.PA2, Irqs, p.DMA1_CH6, NoDma, config);
+    let usart = p.USART2;
+    let usart_1 = p.PA3;
+    let usart_2 = p.PA2;
+    let usart_dma = p.DMA1_CH6;
+    let usart = Uart::new(usart, usart_1, usart_2, Irqs, usart_dma, NoDma, config);
     match usart {
         Ok(usart) => spawner.spawn(ybsu::task(usart)).unwrap(),
         Err(_)  => {println!("USART connection failed")},

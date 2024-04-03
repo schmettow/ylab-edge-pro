@@ -26,7 +26,8 @@ const BAUD: u32 = 2_000_000;
 /// + built-in ADC sensors
 use ylab::*;
 use ylab::ysns::adc as yadc;
-use ylab::ysns::yco2;
+use ylab::ysns::yxz_lsm6 as yxz;
+use ylab::ysns::moi as moi;
 /// + data transport/storage
 use ylab::ytfk::bsu as ybsu;
 
@@ -96,20 +97,29 @@ async fn main(spawner: Spawner) {
     }
     spawner.spawn(control_task()).unwrap();
 
-
     if DEV[0]{
+        let moi_0 
+            = ExtiInput::new(moi::Input::new(p.PA10, moi::Pull::Down), p.EXTI10);
+        let moi_1 
+            = ExtiInput::new(moi::Input::new(p.PB3, moi::Pull::Down), p.EXTI3);
+        spawner.spawn( 
+            ysns::moi::task(moi_0, moi_1, 0)
+        ).unwrap();
+    };
+
+    if DEV[1]{
         let mut delay = Delay;
         let adc1 = adc::Adc::new(p.ADC1, &mut delay);
         spawner.spawn(yadc::adcbank_1(adc1, 
                                     (p.PA0, p.PA1, p.PA4, p.PB0, p.PC1, p.PC0, p.PC3, p.PC2), 
-                                    HZ[0], 0)).unwrap();
+                                    HZ[1], 1)).unwrap();
     };
     
     //#[cfg(feature = "lsm6-grove4")]
     // Activating the second I2C controller on Grove 4
     // and spawning a task for the LSM6 acceleration sensor
     
-    if DEV[1]{
+    if DEV[2]{
         println!("I2C interrupts");
         use hal::i2c;
         bind_interrupts!(struct Irqs {
@@ -129,7 +139,7 @@ async fn main(spawner: Spawner) {
         );
         println!("I2C OK");
         // spawner.spawn(ylab::ysns::yxz_lsm6::multi_task(i2c1, 5, HZ[1], false, 1)).unwrap();
-        spawner.spawn(ylab::ysns::yxz_lsm6::task(i2c1, HZ[1], 1)).unwrap();
+        spawner.spawn(ylab::ysns::yxz_lsm6::task(i2c1, HZ[2], 2)).unwrap();
         println!("I2C task ended");
     }
 
@@ -178,15 +188,12 @@ async fn control_task() {
 
     loop {
         Timer::after_millis(5).await;
-        if yco2::READY.load(RLX) {
-            yco2::SAMPLE.store(true, RLX);
-            println!("CO2 sampling started");
+        if yxz::READY.load(RLX) {
+            yxz::SAMPLE.store(true, RLX);
+            println!("Motion sensing active");
             break
         }
     }
-    
-    
-    yco2::SAMPLE.store(true, RLX);
 }
 
 /*pub use core::sync::atomic::Ordering;
