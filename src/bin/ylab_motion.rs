@@ -5,8 +5,8 @@
 /// CONFIGURATION
 /// 
 /// Adc
-static DEV: [bool; 3] = [true, true, false];
-static HZ: [u64; 3] = [200, 50, 50];
+static DEV: [bool; 3] = [true, true, true];
+static HZ: [u64; 3] = [0, 211, 197];
 const BAUD: u32 = 2_000_000;
 
 /// # YLab Edge
@@ -93,7 +93,7 @@ async fn main(spawner: Spawner) {
     let usart = Uart::new(p.USART2, p.PA3, p.PA2, Irqs, p.DMA1_CH6, NoDma, config);
     match usart {
         Ok(usart) => spawner.spawn(ybsu::task(usart)).unwrap(),
-        Err(_)  => {},
+        Err(_)  => {println!("Couldn't start USART")},
     }
     spawner.spawn(control_task()).unwrap();
 
@@ -140,7 +140,7 @@ async fn main(spawner: Spawner) {
         println!("I2C OK");
         // spawner.spawn(ylab::ysns::yxz_lsm6::multi_task(i2c1, 5, HZ[1], false, 1)).unwrap();
         spawner.spawn(ylab::ysns::yxz_lsm6::task(i2c1, HZ[2], 2)).unwrap();
-        println!("I2C task ended");
+        //println!("I2C task ended");
     }
 
     if DEV[2]{

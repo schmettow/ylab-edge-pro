@@ -4,7 +4,7 @@ use core::fmt::Write;
 //enum Error{NotImplemented, Send}
 
 pub type Ytf = Sample<[Option<f32>; 8]>; // standard transport format
-type YtfLine = Vec<u8, 256>;
+type YtfLine = Vec<u8, 512>;
 
 trait YtfSend{
     fn msg_csv(&self) -> Result<YtfLine, core::fmt::Error>;

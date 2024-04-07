@@ -28,12 +28,10 @@ embassy-usb-logger = { version = "0.1.0" }
 
 log = "0.4"
 
-## USB + logging via USB support
+
 static_cell = "2.0.0"
 fixed = "1.23.1"
 fixed-macro = "1.2.0"
-# embedded-hal = "0.2.7"
-# embedded-hal-async = "0.2.0-alpha.1"
 heapless = "0.8.0"
 usbd-serial = "0.2.0"
 usb-device = "0.3.1"

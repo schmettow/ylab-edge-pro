@@ -6,7 +6,7 @@
 /// 
 /// Adc
 static DEV: [bool; 3] = [true, true, false];
-static HZ: [u64; 3] = [0, 250, 0];
+static HZ: [u64; 3] = [0, 600, 0];
 const BAUD: u32 = 2_000_000; 
 
 /// # YLab Edge
@@ -82,6 +82,7 @@ use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(struct Irqs {
     USART2 => usart::InterruptHandler<peripherals::USART2>;
+    USART3 => usart::InterruptHandler<peripherals::USART3>;
 });
 use embassy_time::Delay;
 use embassy_executor::Spawner;
@@ -96,6 +97,7 @@ async fn main(spawner: Spawner) {
     let usart_2 = p.PA2;
     let usart_dma = p.DMA1_CH6;
     let usart = Uart::new(usart, usart_1, usart_2, Irqs, usart_dma, NoDma, config);
+    //let usart = Uart::new(p.USART3, p.PA3, p.PA2, Irqs, p.DMA1_CH3, NoDma, Config::default());
     match usart {
         Ok(usart) => spawner.spawn(ybsu::task(usart)).unwrap(),
         Err(_)  => {println!("USART connection failed")},
@@ -107,9 +109,7 @@ async fn main(spawner: Spawner) {
             = ExtiInput::new(moi::Input::new(p.PA10, moi::Pull::Down), p.EXTI10);
         let moi_1 
             = ExtiInput::new(moi::Input::new(p.PB3, moi::Pull::Down), p.EXTI3);
-        spawner.spawn( 
-            ysns::moi::task(moi_0, moi_1, 0)
-        ).unwrap();
+        spawner.spawn(ysns::moi::task(moi_0, moi_1, 0)).unwrap();
     };
     if DEV[1]{
         let mut delay = Delay;
