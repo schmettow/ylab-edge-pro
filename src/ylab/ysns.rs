@@ -228,7 +228,7 @@ pub mod yxz_lsm6 {
             = Lsm6::new(i2c, SlaveAddress::Low, time::Delay);
         let success = sensor.setup();
         match success {
-            Err(_) => return, // connection error => end task
+            Err(_) => {println!("Sensor setup failed"); return}, // connection error => end task
             Ok(_) => {},
         }
 
@@ -236,23 +236,23 @@ pub mod yxz_lsm6 {
         sensor.set_accel_scale(AccelerometerScale::Accel2g).unwrap();
         sensor.set_gyro_sample_rate(DataRate::Freq416Hz).unwrap();
         sensor.set_gyro_scale(GyroscopeScale::Dps250).unwrap();
-        let _ = sensor.accel_norm().unwrap() ;
-        let _ = sensor.angular_rate().unwrap();
+        let _ = sensor.accel_norm().is_ok();
+        let _ = sensor.angular_rate().is_ok();
         let mut ticker 
                 = Ticker::every(Duration::from_hz(hz));
         let mut reading: Reading;
         let mut sample: Sample;
         READY.store(true, RLX);
-        
+        println!("Yxz_lsm6 ready");
         //let mut i = 0;
         loop {
             if SAMPLE.load(RLX){
                 let accel = sensor.accel_norm().unwrap();
                 let gyro = sensor.angular_rate().unwrap();
                 reading = [ accel.x, accel.y, accel.z,
-                            gyro.x.as_rpm() as f32, 
-                            gyro.y.as_rpm() as f32, 
-                            gyro.z.as_rpm() as f32];
+                            gyro.x.as_hertz() as f32, 
+                            gyro.y.as_hertz() as f32, 
+                            gyro.z.as_hertz() as f32];
                 sample = Sample{sensory: sensory, time: Instant::now(), 
                                 read: reading};
                 ybsu::SINK.send(to_ytf(sample)).await;
