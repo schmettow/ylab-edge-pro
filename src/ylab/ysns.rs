@@ -32,7 +32,7 @@ pub mod moi {
         let mut reading: Reading;
         use embassy_futures::select::select;
         loop {
-            if SAMPLE.load(RLX){
+            if SAMPLE.load(ORD){
                 println!("MOI: await");
                 select( moi_0.wait_for_any_edge(), 
                         moi_1.wait_for_any_edge()).await;
@@ -96,7 +96,7 @@ pub mod yco2 {
         }
 
         match sensor.reinit() {
-            Ok(_) => {READY.store(true, RLX);},
+            Ok(_) => {READY.store(true, ORD);},
             Err(_) => {println!("SCD41 reinit failed.")},
         }
     
@@ -104,9 +104,9 @@ pub mod yco2 {
         let mut sample: Sample;
         
         loop {
-            if SAMPLE.load(RLX){
+            if SAMPLE.load(ORD){
                 println!("SCD41 active");
-                match sensor.measure_single_shot_non_blocking() {
+                match sensor.measurement() {
                     Err(_) => {println!("SCD41 single shot failed");},
                     Ok(_) => {
                         println!("SCD41 read");
@@ -175,7 +175,7 @@ pub mod adc {
         adc.set_resolution(hal::adc::Resolution::TwelveBit);
         //println!("ADC set");
         loop {
-            if SAMPLE.load(RLX){
+            if SAMPLE.load(ORD){
                 let reading =  
                     [adc.read(&mut pins.0), 
                     adc.read(&mut pins.1),
@@ -242,11 +242,11 @@ pub mod yxz_lsm6 {
                 = Ticker::every(Duration::from_hz(hz));
         let mut reading: Reading;
         let mut sample: Sample;
-        READY.store(true, RLX);
+        READY.store(true, ORD);
         println!("Yxz_lsm6 ready");
         //let mut i = 0;
         loop {
-            if SAMPLE.load(RLX){
+            if SAMPLE.load(ORD){
                 let accel = sensor.accel_norm().unwrap();
                 let gyro = sensor.angular_rate().unwrap();
                 reading = [ accel.x, accel.y, accel.z,
@@ -293,9 +293,9 @@ pub mod yxz_lsm6 {
                     = Ticker::every(Duration::from_hz(hz));
             let mut reading: Reading;
             let mut sample: Sample;
-            READY.store(true, RLX);
+            READY.store(true, ORD);
             loop {
-                if SAMPLE.load(RLX){
+                if SAMPLE.load(ORD){
                     for (s, sensor) in sensors.as_mut().into_iter().enumerate() {
                         if s >= n as usize {continue}
                         let accel = sensor.accel_norm().unwrap();

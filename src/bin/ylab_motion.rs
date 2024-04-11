@@ -179,8 +179,8 @@ async fn control_task() {
 
     loop {
         Timer::after_millis(5).await;
-        if yadc::READY.load(RLX) {
-            yadc::SAMPLE.store(true, RLX);
+        if yadc::READY.load(ORD) {
+            yadc::SAMPLE.store(true, ORD);
             println!("ADC sampling started");
             break
         }
@@ -188,8 +188,8 @@ async fn control_task() {
 
     loop {
         Timer::after_millis(5).await;
-        if yxz::READY.load(RLX) {
-            yxz::SAMPLE.store(true, RLX);
+        if yxz::READY.load(ORD) {
+            yxz::SAMPLE.store(true, ORD);
             println!("Motion sensing active");
             break
         }

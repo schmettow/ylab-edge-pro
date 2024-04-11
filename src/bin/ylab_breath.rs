@@ -147,8 +147,8 @@ async fn control_task() {
 
     loop {
         Timer::after_millis(5).await;
-        if yadc::READY.load(RLX) {
-            yadc::SAMPLE.store(true, RLX);
+        if yadc::READY.load(ORD) {
+            yadc::SAMPLE.store(true, ORD);
             println!("ADC sampling started");
             break
         }
@@ -156,15 +156,15 @@ async fn control_task() {
 
     loop {
         Timer::after_millis(5).await;
-        if yco2::READY.load(RLX) {
-            yco2::SAMPLE.store(true, RLX);
+        if yco2::READY.load(ORD) {
+            yco2::SAMPLE.store(true, ORD);
             println!("CO2 sampling started");
             break
         }
     }
     
     
-    yco2::SAMPLE.store(true, RLX);
+    yco2::SAMPLE.store(true, ORD);
 }
 
 /*pub use core::sync::atomic::Ordering;

@@ -11,7 +11,7 @@ pub use embassy_sync::signal::Signal;
 pub use embassy_sync::channel::Channel;
 
 pub use core::sync::atomic::Ordering;
-pub static RLX: Ordering = Ordering::Relaxed;
+pub static ORD: Ordering = Ordering::Relaxed; // no parallel computing
 pub use core::sync::atomic::AtomicBool;
 
 pub use defmt::println;

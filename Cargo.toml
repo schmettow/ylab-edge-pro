@@ -36,7 +36,8 @@ heapless = "0.8.0"
 usbd-serial = "0.2.0"
 usb-device = "0.3.1"
 nb = "1.1.0"
-scd4x = { version = "0.3.0", default-features=false, features = ["scd41"] }
+# scd4x = { version = "0.3.0", default-features=false, features = ["scd41"] }
+scd4x = { version = "0.3.0"}
 ryu = "1.0.17"
 lsm6dsox = "1.0.1"
 xca9548a = "0.2.1"

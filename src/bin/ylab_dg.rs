@@ -134,8 +134,8 @@ async fn main(spawner: Spawner) {
 #[embassy_executor::task]
 async fn control_task() { 
     let _state = AppState::Send;
-    yadc::SAMPLE.store(true, RLX);
-    moi::SAMPLE.store(true, RLX);
+    yadc::SAMPLE.store(true, ORD);
+    moi::SAMPLE.store(true, ORD);
 }
         
 
