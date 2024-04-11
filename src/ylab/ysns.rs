@@ -148,15 +148,9 @@ pub mod adc {
     pub fn to_ytf(sample: Sample) -> ytfk::Ytf {
         Ytf { sensory: sample.sensory, 
                 time: sample.time, 
-                read: [ Some(sample.read[0].into()), 
-                        Some(sample.read[1].into()),
-                        Some(sample.read[2].into()),
-                        Some(sample.read[3].into()),
-                        Some(sample.read[4].into()),
-                        Some(sample.read[5].into()),
-                        Some(sample.read[6].into()),
-                        Some(sample.read[7].into()),] }
-    }
+                read: sample.read.map(|m| Some(m.into()))
+            }
+        }
     
     //type AdcPin: embedded_hal::adc::Channel<hal::adc::Adc<'static>> + hal::gpio::Pin;
 
