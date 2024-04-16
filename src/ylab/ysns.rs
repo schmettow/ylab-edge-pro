@@ -11,15 +11,13 @@ pub mod moi {
     pub use hal::peripherals::{PA10, PB3, PB5, PB4}; // D2 .. D5
     pub use hal::gpio::{Input, Pull};
 
-    pub type Reading = [bool; 2];
-    pub type Sample = crate::Sample<Reading>;
+    pub type Measure = bool;
+    pub type Reading<const N: usize> = [Measure; N];
+    pub type Sample<const N: usize> = crate::Sample<Measure, N>;
     
     /* result channel */
     //pub static RESULT: Signal<RawMutex, Sample>  = Signal::new();
 
-    /* trigger channel */
-    pub static TRIGGER: Channel<RawMutex, Sample, 2> = Channel::new();
-    
     /* control channels */
     pub static READY: AtomicBool = AtomicBool::new(false);
     pub static SAMPLE: AtomicBool = AtomicBool::new(true);
@@ -28,8 +26,6 @@ pub mod moi {
     pub async fn task(mut moi_0: ExtiInput<'static, PA10>, mut moi_1: ExtiInput<'static, PB3>, sensory: u8) {
     //pub async fn task(pins: [AnyPin; 4], trigger: [(bool, Option<bool>); 4], hz: u64, sensory: u8) {
         println!("Starting MOI task");
-        let mut sample: Sample; 
-        let mut reading: Reading;
         use embassy_futures::select::select;
         loop {
             if SAMPLE.load(ORD){
@@ -37,25 +33,15 @@ pub mod moi {
                 select( moi_0.wait_for_any_edge(), 
                         moi_1.wait_for_any_edge()).await;
                 println!("Event detected");
-                reading = [moi_0.get_level().into(), moi_1.get_level().into()];
-                sample = Sample{
+                let reading = [moi_0.get_level().into(), moi_1.get_level().into()];
+                let sample = Sample{
                             sensory: sensory,
                             time: Instant::now(), 
                             read: reading};
                 
-                ybsu::SINK.send(to_ytf(sample.clone())).await;
-                // TRIGGER.send(sample).await; <----- Makes it hang
+                ybsu::SINK.send(sample.into()).await;
                 };
             }                
-        }
-
-
-        pub fn to_ytf(sample: Sample) -> ytfk::Ytf {
-            Ytf { sensory: sample.sensory, 
-                    time: sample.time, 
-                    read: [ Some(sample.read[0].into()), 
-                            Some(sample.read[1].into()),
-                            None,None, None, None, None, None] }
         }
     }
    
@@ -72,18 +58,11 @@ pub mod yco2 {
     pub static SAMPLE: AtomicBool = AtomicBool::new(true);
 
     // Generic result
-    pub type Reading = [f32; 3];
-    pub type Sample = crate::Sample<Reading>;
+    const N: usize = 3;
+    pub type Measure = f32;
+    pub type Reading = [Measure; N]; /// <--- 4 channel is total accel for now
+    pub type Sample = crate::Sample<Measure, N>;
 
-    pub fn to_ytf(sample: Sample) -> ytfk::Ytf {
-        Ytf { sensory: sample.sensory, 
-                time: sample.time, 
-                read: [ Some(sample.read[0].into()), 
-                        Some(sample.read[1].into()),
-                        Some(sample.read[2].into()),
-                        None, None, None, None, None] }
-    }
-    
     #[embassy_executor::task]
     pub async fn task(  i2c: i2c::I2c<'static, ThisI2C>, sensory: u8) { 
         //DISP.signal([None, None, None, Some("CO2 start".try_into().unwrap())]);        
@@ -116,7 +95,7 @@ pub mod yco2 {
                             Ok(raw) => {
                                 let reading: Reading = [raw.co2 as f32, raw.humidity as f32, raw.temperature as f32];
                                 sample = Sample{sensory: sensory, time: Instant::now(), read: reading};
-                                ybsu::SINK.send(to_ytf(sample)).await;
+                                ybsu::SINK.send(sample.into()).await;
                             },
                         };
                         
@@ -136,22 +115,15 @@ pub mod adc {
     //use hal::peripherals::{ADC3, PF3, PF4, PF5, PF6, PF7, PF8, PF9, PF10};
     use hal::adc::{Adc, SampleTime};
 
-    // data
-    // pub type Measure = SensorResult<Reading>;
-    pub type Reading = [u16; 8];
-    pub type Sample = crate::Sample<Reading>;
-    
+    const N: usize = 8;
+    pub type Measure = u16;
+    pub type Reading = [Measure; N]; 
+    pub type Sample = crate::Sample<Measure, N>;
+
     // control channels
     pub static READY: AtomicBool = AtomicBool::new(false);
     pub static SAMPLE: AtomicBool = AtomicBool::new(true);
-    
-    pub fn to_ytf(sample: Sample) -> ytfk::Ytf {
-        Ytf { sensory: sample.sensory, 
-                time: sample.time, 
-                read: sample.read.map(|m| Some(m.into()))
-            }
-        }
-    
+        
     //type AdcPin: embedded_hal::adc::Channel<hal::adc::Adc<'static>> + hal::gpio::Pin;
 
     #[embassy_executor::task]
@@ -181,7 +153,7 @@ pub mod adc {
                     adc.read(&mut pins.7),];
                 sample = Sample{sensory: sensory, time: Instant::now(), 
                                 read: reading};
-                ybsu::SINK.send(to_ytf(sample)).await;
+                ybsu::SINK.send(sample.into()).await;
                 };
             ticker.next().await;
             }                
@@ -196,24 +168,15 @@ pub mod yxz_lsm6 {
     use Lsm6dsox as Lsm6;
     use accelerometer::Accelerometer;
 
-    pub type Reading = [f32; 6];
-    pub type Sample = crate::Sample<Reading>;
-    
+    const N: usize = 6;
+    type Measure = f32;
+    type Reading = [Measure; N];
+    pub type Sample = crate::Sample<Measure, N>;
+
     // control channels
     pub static READY: AtomicBool = AtomicBool::new(false);
     pub static SAMPLE: AtomicBool = AtomicBool::new(true);
     
-    pub fn to_ytf(sample: Sample) -> ytfk::Ytf {
-        Ytf { sensory: sample.sensory, 
-                time: sample.time, 
-                read: [ Some(sample.read[0].into()), 
-                        Some(sample.read[1].into()),
-                        Some(sample.read[2].into()),
-                        Some(sample.read[3].into()),
-                        Some(sample.read[4].into()),
-                        Some(sample.read[5].into()),None,None] }
-    }
-
     #[embassy_executor::task]
     pub async fn task(  i2c: i2c::I2c<'static, ThisI2C>,
                         hz: u64,
@@ -249,7 +212,7 @@ pub mod yxz_lsm6 {
                             gyro.z.as_hertz() as f32];
                 sample = Sample{sensory: sensory, time: Instant::now(), 
                                 read: reading};
-                ybsu::SINK.send(to_ytf(sample)).await;
+                ybsu::SINK.send(sample.into()).await;
                 };
             ticker.next().await;
             };
@@ -299,7 +262,7 @@ pub mod yxz_lsm6 {
                                 gyro.y.as_rpm() as f32, 
                                 gyro.z.as_rpm() as f32];
                         sample = Sample{sensory: sensory + s as u8, time: Instant::now(), read: reading};
-                        ybsu::SINK.send(to_ytf(sample)).await;
+                        ybsu::SINK.send(sample.into()).await;
                         }
                         if !just_spin {ticker.next().await;};
                     };
