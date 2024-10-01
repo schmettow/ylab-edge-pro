@@ -3,7 +3,7 @@
 
 pub use super::*;
 pub use super::ytfk::bsu as ybsu;
-pub use ytfk::Ytf;
+pub use ytfk::data::Sample as GenericSample;
 use hal::i2c;
 
 pub mod moi {
@@ -13,7 +13,7 @@ pub mod moi {
 
     pub type Measure = bool;
     pub type Reading<const N: usize> = [Measure; N];
-    pub type Sample<const N: usize> = crate::Sample<Measure, N>;
+    pub type Sample<const N: usize> = GenericSample<Measure, N>;
     
     /* result channel */
     //pub static RESULT: Signal<RawMutex, Sample>  = Signal::new();
@@ -61,7 +61,7 @@ pub mod yco2 {
     const N: usize = 3;
     pub type Measure = f32;
     pub type Reading = [Measure; N]; /// <--- 4 channel is total accel for now
-    pub type Sample = crate::Sample<Measure, N>;
+    pub type Sample = GenericSample<Measure, N>;
 
     #[embassy_executor::task]
     pub async fn task(  i2c: i2c::I2c<'static, ThisI2C>, sensory: u8) { 
@@ -118,13 +118,19 @@ pub mod adc {
     const N: usize = 8;
     pub type Measure = u16;
     pub type Reading = [Measure; N]; 
-    pub type Sample = crate::Sample<Measure, N>;
+    pub type Sample = GenericSample<Measure, N>;
 
-    // control channels
+    /// Static channels for status and data
+    /// 
+    /// ADC banks will use this to indicate ready-to-poll
+    /// and send the data.
     pub static READY: AtomicBool = AtomicBool::new(false);
     pub static SAMPLE: AtomicBool = AtomicBool::new(true);
         
     //type AdcPin: embedded_hal::adc::Channel<hal::adc::Adc<'static>> + hal::gpio::Pin;
+
+    /// Task for ADC controller 1 with eight pins
+    /// 
 
     #[embassy_executor::task]
     pub async fn adcbank_1(mut adc: Adc<'static, ADC1>,
@@ -171,7 +177,7 @@ pub mod yxz_lsm6 {
     const N: usize = 6;
     type Measure = f32;
     type Reading = [Measure; N];
-    pub type Sample = crate::Sample<Measure, N>;
+    pub type Sample = GenericSample<Measure, N>;
 
     // control channels
     pub static READY: AtomicBool = AtomicBool::new(false);
