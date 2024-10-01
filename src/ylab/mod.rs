@@ -19,6 +19,33 @@ pub mod ysns; // Ylab sensors
 pub mod ytfk; // YLab transfer formats & kodices
 
 
+/// Ylab reads sensor data into fixed arrays [Option<f64>; 8]
+/// 
+/// TODO: Check if this can be reduced to f32 to increase performance
+pub const YTF_LEN: usize = 8;
+pub type YtfType = f64;
+pub type YtfRead = [Option<YtfType>; YTF_LEN];
+
+/// A YTF record is an array of N measures 
+/// 
+/// with a time-stamp and the id of the sensor array (sensory).
+/// Other types than M can be used, if they implement Into<M>.
+/// 
+
+pub struct Ytf {
+    pub sensory: u8,
+    pub time: Instant,
+    pub read: YtfRead,
+}
+
+
+/// A Sample is a sensor-typical array of values  
+/// with a timestamp and a sensory identifier.
+/// 
+/// The basic reading type must implement Into<YtfType>.
+/// This is supposed to collect readings, where the length depends on the sensor 
+/// (e.g. 6 for acceleration sensors)
+
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Sample<M, const N: usize>
     where M: Into<YtfType>
@@ -28,15 +55,10 @@ pub struct Sample<M, const N: usize>
     pub read: [M; N],
 }
 
-pub const YTF_LEN: usize = 8;
-pub type YtfType = f64;
-pub type YtfRead = [Option<YtfType>; YTF_LEN];
-
-pub struct Ytf {
-    pub sensory: u8,
-    pub time: Instant,
-    pub read: YtfRead,
-}
+/// Converting Sample to YTF
+/// 
+/// Arrays of arbitrary size are converted to fixed size arrays 
+/// with optional types.
 
 impl<M: Into<YtfType>, const N: usize> Into<Ytf> for Sample<M, N> {
     fn into(self) -> Ytf {
@@ -52,13 +74,16 @@ impl<M: Into<YtfType>, const N: usize> Into<Ytf> for Sample<M, N> {
     }
 }
 
+/// Display YTF as CSV
+/// 
+/// the default formatting of YTF is CSV
 impl core::fmt::Display for Ytf {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{}, {}", self.time.as_micros(), self.sensory).unwrap();
         for r in self.read {
             match r {
                 Some(v) => {
-                    write!(f, ",{:.3}", v).unwrap();},
+                    write!(f, ",{:.5}", v).unwrap();},
                 None => {write!(f, ",").unwrap();}
             }
         }
