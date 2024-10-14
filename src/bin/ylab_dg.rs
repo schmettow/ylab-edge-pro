@@ -92,10 +92,10 @@ async fn main(spawner: Spawner) {
     let p = hal::init(Default::default());
     let mut config = Config::default();
     config.baudrate = BAUD;
-    let usart = p.USART2;
-    let tx = p.PA3;
-    let rx = p.PA2;
-    let usart_dma = p.DMA1_CH6;
+    let usart = p.USART3;
+    let tx = p.PC11;
+    let rx = p.PC10;
+    let usart_dma = p.DMA1_CH3;
     let usart = Uart::new(usart, tx, rx, Irqs, usart_dma, NoDma, config);
     //let usart = Uart::new(p.USART3, p.PA3, p.PA2, Irqs, p.DMA1_CH3, NoDma, Config::default());
     match usart {
