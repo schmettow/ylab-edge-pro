@@ -97,7 +97,6 @@ async fn main(spawner: Spawner) {
     let rx = p.PA2;
     let usart_dma = p.DMA1_CH6;
     let usart = Uart::new(usart, tx, rx, Irqs, usart_dma, NoDma, config);
-    //let usart = Uart::new(p.USART3, p.PA3, p.PA2, Irqs, p.DMA1_CH3, NoDma, Config::default());
     match usart {
         Ok(usart) => spawner.spawn(ybsu::task(usart)).unwrap(),
         Err(_)  => {println!("USART connection failed")},
