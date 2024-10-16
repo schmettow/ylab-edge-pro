@@ -93,11 +93,10 @@ async fn main(spawner: Spawner) {
     let mut config = Config::default();
     config.baudrate = BAUD;
     let usart = p.USART2;
-    let usart_1 = p.PA3;
-    let usart_2 = p.PA2;
+    let tx = p.PA3;
+    let rx = p.PA2;
     let usart_dma = p.DMA1_CH6;
-    let usart = Uart::new(usart, usart_1, usart_2, Irqs, usart_dma, NoDma, config);
-    //let usart = Uart::new(p.USART3, p.PA3, p.PA2, Irqs, p.DMA1_CH3, NoDma, Config::default());
+    let usart = Uart::new(usart, tx, rx, Irqs, usart_dma, NoDma, config);
     match usart {
         Ok(usart) => spawner.spawn(ybsu::task(usart)).unwrap(),
         Err(_)  => {println!("USART connection failed")},
