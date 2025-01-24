@@ -8,7 +8,7 @@ Highest achieved readings with YLab are in the range of 250 SPS, which is enough
 but is insufficient for large sensor arrays with high sample rates, e.g. motion capture or EEG.
 The solution is to re-implement the YLab API in the systems programming language [Rust](https://www.rust-lang.org/). 
 
-**YLab Edge Pro** is the version to use for **STM32** microcontrollers. 
+**YLab Edge Pro** is the version to use for **STM32 F446RE** microcontrollers. 
 Currently, Pro is also the most powerful version in terms of channels and throughput.
 However, it is not interactive, like [YLab Edge Go](https://github.com/schmettow/ylab-edge-go).
 
