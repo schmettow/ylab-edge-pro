@@ -13,7 +13,8 @@ use embassy_time::{Duration, Timer};
 use panic_probe as _;
 use static_cell::StaticCell;
 
-use ads129x::{Ads129x, ConfigRegisters, Error};
+//use ads129x::{Ads129x, ConfigRegisters, Error};
+use ylab::ysns::ads1299;
 
 // Für Logging / Defmt
 use defmt_rtt as _;
@@ -67,29 +68,11 @@ async fn main(_spawner: Spawner) {
     let spi_dev = SpiDevice::new(spi_bus, cs);
 
     // now create the ADS driver with the SpiDevice
-    let mut ads = Ads129x::new(spi_dev);
+    let mut sensor = ads1299::Sensor::new(spi_dev);
+    sensor.init(0, 100).await.unwrap();
 
-    // apply async config
-    let cfg = ConfigRegisters::default();
-    if let Err(e) = cfg.apply_async(&mut ads).await {
-        //defmt::error!("ADS129x configuration failed: {}", e);
-        loop {
-            Timer::after(Duration::from_secs(1)).await;
-        }
-    }
-
-    defmt::info!("Start read loop");
     loop {
-        match ads.read_data_2ch_async().await {
-            Ok(data) => {
-                defmt::info!(
-                    "CH1: {} V, CH2: {} V",
-                    data.ch1_sample().voltage(),
-                    data.ch2_sample().voltage()
-                );
-            }
-            Err(_) => {}
-        }
-        Timer::after(Duration::from_millis(100)).await;
+        if let Ok(_) = sensor.sample().await {}
     }
+    // apply async config
 }
