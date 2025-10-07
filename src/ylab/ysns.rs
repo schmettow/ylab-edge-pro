@@ -423,3 +423,124 @@ pub mod ads1299 {
         }
     }
 }
+
+pub mod SenFive {
+    use super::*;
+    const N: usize = 8;
+    type Measure = f32;
+    type Reading = [Measure; N];
+    pub type Sample = GenericSample<Measure, N>;
+
+    // control channels
+    pub static READY: AtomicBool = AtomicBool::new(false);
+    pub static SAMPLE: AtomicBool = AtomicBool::new(true);
+
+    use embedded_hal::delay::DelayNs;
+    use embedded_hal::i2c::I2c;
+    use sen5x::Sen5x;
+    use sen5x_rs as sen5x;
+
+    pub struct Sensor<I, D>
+    where
+        I: I2c,
+        D: DelayNs,
+    {
+        sensor: Sen5x<I, D>,
+        pub id: u8,
+        pub hz: f32,
+    }
+
+    impl<I, D> Sensor<I, D>
+    where
+        I: I2c,
+        D: DelayNs,
+    {
+        pub fn new(i2c: I, delay: D, id: u8, hz: f32) -> Self {
+            Self {
+                sensor: Sen5x::new(i2c, delay),
+                id: id,
+                hz: hz,
+            }
+        }
+
+        pub fn set_hz(&mut self, hz: f32) {
+            self.hz = hz;
+        }
+
+        pub fn yd(self) -> u8 {
+            self.id
+        }
+        pub fn init(&mut self) -> Result<(), ()> {
+            match self.sensor.reinit() {
+                Ok(_) => Ok(()),
+                Err(_) => Err(()),
+            }
+        }
+
+        pub fn read(&mut self) -> Result<Reading, ()> {
+            let reading = self.sensor.measurement();
+            match reading {
+                Ok(r) => Ok([
+                    r.humidity,
+                    r.nox_index,
+                    r.pm1_0,
+                    r.pm2_5,
+                    r.pm4_0,
+                    r.pm10_0,
+                    r.temperature,
+                    r.voc_index,
+                ]),
+                _ => Err(()),
+            }
+        }
+
+        pub fn sample(&mut self) -> Result<Sample, ()> {
+            let reading = self.read();
+            match reading {
+                Ok(reading) => Ok(Sample {
+                    sensory: self.id,
+                    time: Instant::now(),
+                    read: reading,
+                }),
+                Err(_) => Err(()),
+            }
+        }
+    }
+
+    use hal::peripherals::I2C1 as ThisI2C;
+
+    #[embassy_executor::task]
+    pub async fn task(i2c: i2c::I2c<'static, ThisI2C>, hz: f32, sensory: u8) {
+        let mut sensor = Sensor::new(i2c, time::Delay, sensory, hz);
+        match sensor.init() {
+            Err(_) => {
+                println!("Sensor setup failed");
+                return;
+            } // connection error => end task
+            Ok(_) => {}
+        }
+
+        let mut ticker = Ticker::every(Duration::from_hz(hz));
+        let mut reading: Reading;
+        let mut sample: Sample;
+        READY.store(true, ORD);
+        println!("Sen5 ready");
+
+        loop {
+            if SAMPLE.load(ORD) {
+                sample = Sample {
+                    sensory: sensory,
+                    time: Instant::now(),
+                    read: reading,
+                };
+                match sensor.sample() {
+                    Ok(sample) => {
+                        ybsu::SINK.send(sample.into()).await;
+                    }
+                    Err(_) => {}
+                }
+            };
+            ticker.next().await;
+        }
+    }
+}
