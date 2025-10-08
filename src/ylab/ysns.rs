@@ -321,19 +321,18 @@ pub mod ads1299 {
     use ads129x::descriptors::*;
     use ads129x::{Ads129x, AdsData, Error};
     // SPI Bus
-    use embassy_stm32::peripherals::{self, DMA2_CH2, DMA2_CH3, PA4, PA5, PA6, PA7, SPI1};
-    use embassy_stm32::spi::{Config as SpiConfig, Spi};
-    use embassy_stm32::time::Hertz;
-    use embassy_sync::blocking_mutex::raw::NoopRawMutex;
-    use embassy_sync::mutex::Mutex;
+    //use embassy_stm32::peripherals::{DMA2_CH2, DMA2_CH3, SPI1};
+    //use embassy_stm32::spi::Spi;
+    //use embassy_sync::blocking_mutex::raw::NoopRawMutex;
+    //use embassy_sync::mutex::Mutex;
     use embedded_hal_async::spi::SpiDevice;
-    use static_cell::StaticCell;
-    type SpiBus1 = Spi<'static, SPI1, DMA2_CH3, DMA2_CH2>;
-    type SpiBusMutex1 = Mutex<NoopRawMutex, SpiBus1>;
+    //use static_cell::StaticCell;
+    //type SpiBus1 = Spi<'static, SPI1, DMA2_CH3, DMA2_CH2>;
+    //type SpiBusMutex1 = Mutex<NoopRawMutex, SpiBus1>;
     // control channels and shared bus
     pub static READY: AtomicBool = AtomicBool::new(false);
     pub static RECORD: AtomicBool = AtomicBool::new(true);
-    static SPI_BUS_1: StaticCell<SpiBusMutex1> = StaticCell::new();
+    //static SPI_BUS_1: StaticCell<SpiBusMutex1> = StaticCell::new();
 
     // measures
     const N: usize = 2;
@@ -424,7 +423,7 @@ pub mod ads1299 {
     }
 }
 
-pub mod SenFive {
+pub mod sen_five {
     use super::*;
     const N: usize = 8;
     type Measure = f32;
@@ -435,7 +434,6 @@ pub mod SenFive {
     pub static READY: AtomicBool = AtomicBool::new(false);
     pub static SAMPLE: AtomicBool = AtomicBool::new(true);
 
-    use embassy_stm32::time::Hertz;
     use embedded_hal::delay::DelayNs;
     use embedded_hal::i2c::I2c;
     use sen5x::Sen5x;
