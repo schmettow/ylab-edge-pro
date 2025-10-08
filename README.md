@@ -1,14 +1,14 @@
 # YLab Edge
 
-In a sister project we have introduced the [YLab Zero](https://github.com/schmettow/ylab) for building interactive sensor recording devices. 
+In a sister project we have introduced the [YLab Zero](https://github.com/schmettow/ylab) for building interactive sensor recording devices.
 Using CircuitPython, developing sensors for everyday research never was easier.
 
-The purpose of *YLab Edge* is to follow YLab in spirit, but improve on what Ylab lacks the most, and that is: speed! 
-Highest achieved readings with YLab are in the range of 250 SPS, which is enough for many applications, 
+The purpose of *YLab Edge* is to follow YLab in spirit, but improve on what Ylab lacks the most, and that is: speed!
+Highest achieved readings with YLab are in the range of 250 SPS, which is enough for many applications,
 but is insufficient for large sensor arrays with high sample rates, e.g. motion capture or EEG.
-The solution is to re-implement the YLab API in the systems programming language [Rust](https://www.rust-lang.org/). 
+The solution is to re-implement the YLab API in the systems programming language [Rust](https://www.rust-lang.org/).
 
-**YLab Edge Pro** is the version to use for **STM32 F446ZE** microcontrollers. 
+**YLab Edge Pro** is the version to use for **STM32 F446ZE** microcontrollers.
 Currently, Pro is also the most powerful version in terms of channels and throughput.
 However, it is not interactive, like [YLab Edge Go](https://github.com/schmettow/ylab-edge-go).
 
@@ -28,8 +28,8 @@ Currenty, the following devices are implemented using [Embassy]: https://embassy
 + SCD4x CO2 sensor
 + LSM6DSO6 acceleration and gyro sensor
 + arrays of up to six acceleration sensors with the Xca9548a I2C bridge
-+ ADS1292 two-channel ECG sensor (*coming soon*)
-+ SEN5x air quality sensor (*coming soon*)
++ ADS1292 two-channel ECG sensor (*untested*)
++ SEN5x air quality sensor (*untested*)
 
 More devices have already been implemented for [YLab Edge Go](https://github.com/schmettow/ylab-edge-go), which is based on RP2040 MCUs.
 
@@ -60,4 +60,3 @@ then try repeating the `cargo run` command above.
 
 
 `SPDX-License-Identifier: Apache-2.0 OR MIT`
-
