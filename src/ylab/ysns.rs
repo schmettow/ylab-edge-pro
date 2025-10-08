@@ -435,6 +435,7 @@ pub mod SenFive {
     pub static READY: AtomicBool = AtomicBool::new(false);
     pub static SAMPLE: AtomicBool = AtomicBool::new(true);
 
+    use embassy_stm32::time::Hertz;
     use embedded_hal::delay::DelayNs;
     use embedded_hal::i2c::I2c;
     use sen5x::Sen5x;
@@ -447,7 +448,7 @@ pub mod SenFive {
     {
         sensor: Sen5x<I, D>,
         pub id: u8,
-        pub hz: f32,
+        pub interval: Duration,
     }
 
     impl<I, D> Sensor<I, D>
@@ -455,21 +456,23 @@ pub mod SenFive {
         I: I2c,
         D: DelayNs,
     {
-        pub fn new(i2c: I, delay: D, id: u8, hz: f32) -> Self {
+        pub fn new(i2c: I, delay: D, id: u8, interval: Duration) -> Self {
             Self {
                 sensor: Sen5x::new(i2c, delay),
                 id: id,
-                hz: hz,
+                interval: interval,
             }
         }
 
-        pub fn set_hz(&mut self, hz: f32) {
-            self.hz = hz;
+        pub fn set_interval(&mut self, interval: Duration) {
+            self.interval = interval;
         }
 
-        pub fn yd(self) -> u8 {
-            self.id
+        pub fn set_hz(&mut self, hz: u32) {
+            self.interval = Duration::from_hz(hz.into());
+            todo!()
         }
+
         pub fn init(&mut self) -> Result<(), ()> {
             match self.sensor.reinit() {
                 Ok(_) => Ok(()),
@@ -510,8 +513,8 @@ pub mod SenFive {
     use hal::peripherals::I2C1 as ThisI2C;
 
     #[embassy_executor::task]
-    pub async fn task(i2c: i2c::I2c<'static, ThisI2C>, hz: f32, sensory: u8) {
-        let mut sensor = Sensor::new(i2c, time::Delay, sensory, hz);
+    pub async fn task(i2c: i2c::I2c<'static, ThisI2C>, interval: Duration, sensory: u8) {
+        let mut sensor = Sensor::new(i2c, time::Delay, sensory, interval);
         match sensor.init() {
             Err(_) => {
                 println!("Sensor setup failed");
@@ -520,19 +523,12 @@ pub mod SenFive {
             Ok(_) => {}
         }
 
-        let mut ticker = Ticker::every(Duration::from_hz(hz));
-        let mut reading: Reading;
-        let mut sample: Sample;
+        let mut ticker = Ticker::every(interval);
         READY.store(true, ORD);
         println!("Sen5 ready");
 
         loop {
             if SAMPLE.load(ORD) {
-                sample = Sample {
-                    sensory: sensory,
-                    time: Instant::now(),
-                    read: reading,
-                };
                 match sensor.sample() {
                     Ok(sample) => {
                         ybsu::SINK.send(sample.into()).await;
