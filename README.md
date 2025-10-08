@@ -21,15 +21,15 @@ Currenty, the following devices are implemented using [Embassy]: https://embassy
 + USART data transfer
 + several sensors
 
-## supported sensors:
+## Supported sensors:
 
 + contact sensors (buttons)
 + onboard ADC channels
 + SCD4x CO2 sensor
 + LSM6DSO6 acceleration and gyro sensor
 + arrays of up to six acceleration sensors with the Xca9548a I2C bridge
-+ ADS1292 two-channel ECG sensor (untested)
-+ SEN5x air quality sensor (untested)
++ ADS1292 two-channel ECG sensor (*coming soon*)
++ SEN5x air quality sensor (*coming soon*)
 
 More devices have already been implemented for [YLab Edge Go](https://github.com/schmettow/ylab-edge-go), which is based on RP2040 MCUs.
 
