@@ -5,11 +5,10 @@ use defmt_rtt as _;
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_executor::Spawner;
 use embassy_stm32::gpio::{Level, Speed};
-use embassy_stm32::peripherals::{DMA2_CH2, DMA2_CH3, PA4, PA5, PA6, PA7, SPI1};
+use embassy_stm32::peripherals::{DMA2_CH2, DMA2_CH3, SPI1};
 use embassy_stm32::spi::{Config as SpiConfig, Spi};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::mutex::Mutex;
-use embassy_time::{Duration, Timer};
 use panic_probe as _;
 use static_cell::StaticCell;
 
@@ -19,6 +18,7 @@ use ylab::ysns::ads1299;
 // Für Logging / Defmt
 use defmt_rtt as _;
 use panic_probe as _;
+use ylab::ytfk::bsu::SINK;
 
 type SpiBus = Spi<'static, SPI1, DMA2_CH3, DMA2_CH2>;
 type SpiBusMutex = Mutex<NoopRawMutex, SpiBus>;
@@ -72,7 +72,9 @@ async fn main(_spawner: Spawner) {
     sensor.init(0, 100).await.unwrap();
 
     loop {
-        if let Ok(_) = sensor.sample().await {}
+        if let Ok(s) = sensor.sample().await {
+            SINK.send(s.into()).await;
+        }
     }
     // apply async config
 }

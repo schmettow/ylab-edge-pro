@@ -320,6 +320,8 @@ pub mod ads1299 {
     // Sensor
     use ads129x::descriptors::*;
     use ads129x::Ads129x;
+    use ads129x::AdsData;
+    use ads129x::SensorVersion;
     // SPI Bus
     //use embassy_stm32::peripherals::{DMA2_CH2, DMA2_CH3, SPI1};
     //use embassy_stm32::spi::Spi;
@@ -335,7 +337,7 @@ pub mod ads1299 {
     //static SPI_BUS_1: StaticCell<SpiBusMutex1> = StaticCell::new();
 
     // measures
-    const N: usize = 2;
+    const N: usize = 4;
     pub type Measure = f32;
     pub type Reading = [Measure; N];
     pub type Sample = GenericSample<Measure, N>;
@@ -344,7 +346,7 @@ pub mod ads1299 {
     where
         SPI: SpiDevice,
     {
-        sensor: Ads129x<SPI>,
+        sensor: Ads129x<SPI, N>,
         pub id: u8,
         pub hz: usize,
     }
@@ -355,7 +357,7 @@ pub mod ads1299 {
     {
         pub fn new(spi: SPI) -> Self {
             Self {
-                sensor: Ads129x::new(spi),
+                sensor: Ads129x::new(spi, SensorVersion::Chan4),
                 id: 0,
                 hz: 0,
             }
@@ -379,14 +381,16 @@ pub mod ads1299 {
                 config1: Config1::default(),
                 config2: Config2::default(),
                 config3: Config3::default(),
-                loff: Loff::default(),
+                config4: Config4::default(),
+                loff: LoffStatNeg::default(),
                 ch1set: Ch1Set::default(),
                 ch2set: Ch2Set::default(),
-                rldsens: RldSens::default(),
-                loffsens: LoffSens::default(),
-                loffstat: LoffStat::default(),
-                resp1: Resp1::default(),
-                resp2: Resp2::default(),
+                ch3set: Ch3Set::default(),
+                ch4set: Ch4Set::default(),
+                ch5set: Ch5Set::default(),
+                ch6set: Ch6Set::default(),
+                ch7set: Ch7Set::default(),
+                ch8set: Ch8Set::default(),
                 gpio: Gpio::default(),
             };
 
@@ -400,12 +404,9 @@ pub mod ads1299 {
 
         pub async fn read(&mut self) -> Result<Reading, ()> {
             //let reading: Reading = [self.sensor.read_data_1ch_async().await];
-            let reading = [
-                self.sensor.read_data_1ch_async().await,
-                self.sensor.read_data_2ch_async().await,
-            ];
+            let reading = self.sensor.read().await;
             match reading {
-                [Ok(d1), Ok(d2)] => Ok([d1.ch1_sample().voltage(), d2.ch2_sample().voltage()]),
+                Ok(ads_data) => Ok(ads_data.voltage()),
                 _ => Err(()),
             }
         }
