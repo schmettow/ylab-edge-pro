@@ -13,7 +13,7 @@ use panic_probe as _;
 use static_cell::StaticCell;
 
 //use ads129x::{Ads129x, ConfigRegisters, Error};
-use ylab::ysns::ads1299;
+use ylab::ysns::yds1299;
 
 // Für Logging / Defmt
 use defmt_rtt as _;
@@ -28,7 +28,7 @@ static SPI_BUS: StaticCell<SpiBusMutex> = StaticCell::new();
 
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
-    defmt::info!("STM32F446ZE ADS129x example init");
+    defmt::info!("STM32F446ZE ADS1299 example init");
 
     // init peripherals
     let p = embassy_stm32::init(Default::default());
@@ -68,7 +68,7 @@ async fn main(_spawner: Spawner) {
     let spi_dev = SpiDevice::new(spi_bus, cs);
 
     // now create the ADS driver with the SpiDevice
-    let mut sensor = ads1299::Sensor::new(spi_dev);
+    let mut sensor = yds1299::Sensor::new(spi_dev);
     sensor.init(0, 100).await.unwrap();
 
     loop {

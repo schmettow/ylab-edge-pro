@@ -315,13 +315,13 @@ pub mod yxz_lsm6 {
     }
 }
 
-pub mod ads1299 {
+pub mod yds1299 {
     use super::*;
     // Sensor
-    use ads129x::descriptors::*;
-    use ads129x::Ads129x;
-    use ads129x::AdsData;
-    use ads129x::SensorVersion;
+    use ads1299::descriptors::*;
+    use ads1299::Ads129x;
+    //use ads1299::AdsData;
+    use ads1299::SensorVersion;
     // SPI Bus
     //use embassy_stm32::peripherals::{DMA2_CH2, DMA2_CH3, SPI1};
     //use embassy_stm32::spi::Spi;
@@ -374,10 +374,10 @@ pub mod ads1299 {
             self.id = id;
             self.hz = hz;
             self.sensor
-                .write_command_async(ads129x::descriptors::Command::WAKEUP)
+                .write_command_async(ads1299::descriptors::Command::WAKEUP)
                 .await
                 .unwrap(); //// XXXXXXXXXXXXXXXXXXXX
-            let config = ads129x::ConfigRegisters {
+            let config = ads1299::ConfigRegisters {
                 config1: Config1::default(),
                 config2: Config2::default(),
                 config3: Config3::default(),
