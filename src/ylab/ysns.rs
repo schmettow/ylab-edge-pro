@@ -323,14 +323,8 @@ pub mod yds1299 {
     //use ads1299::AdsData;
     use ads1299::SensorVersion;
     // SPI Bus
-    //use embassy_stm32::peripherals::{DMA2_CH2, DMA2_CH3, SPI1};
-    //use embassy_stm32::spi::Spi;
-    //use embassy_sync::blocking_mutex::raw::NoopRawMutex;
-    //use embassy_sync::mutex::Mutex;
     use embedded_hal_async::spi::SpiDevice;
-    //use static_cell::StaticCell;
-    //type SpiBus1 = Spi<'static, SPI1, DMA2_CH3, DMA2_CH2>;
-    //type SpiBusMutex1 = Mutex<NoopRawMutex, SpiBus1>;
+    use log::debug;
     // control channels and shared bus
     pub static READY: AtomicBool = AtomicBool::new(false);
     pub static RECORD: AtomicBool = AtomicBool::new(true);
@@ -342,11 +336,20 @@ pub mod yds1299 {
     pub type Reading = [Measure; N];
     pub type Sample = GenericSample<Measure, N>;
 
+    #[derive(Debug)]
+    pub enum AdsError {
+        Command(Command),
+        Init,
+        WakeUp,
+        Config,
+        Read,
+    }
+
     pub struct Sensor<SPI>
     where
         SPI: SpiDevice,
     {
-        sensor: Ads129x<SPI, N>,
+        pub sensor: Ads129x<SPI, N>,
         pub id: u8,
         pub hz: usize,
     }
@@ -355,11 +358,11 @@ pub mod yds1299 {
     where
         SPI: SpiDevice,
     {
-        pub fn new(spi: SPI) -> Self {
+        pub fn new(spi: SPI, id: u8, hz: usize) -> Self {
             Self {
                 sensor: Ads129x::new(spi, SensorVersion::Chan4),
-                id: 0,
-                hz: 0,
+                id: id,
+                hz: hz,
             }
         }
 
@@ -367,16 +370,34 @@ pub mod yds1299 {
             self.hz = hz;
         }
 
-        pub fn yd(self) -> u8 {
-            self.id
-        }
-        pub async fn init(&mut self, id: u8, hz: usize) -> Result<(), ()> {
-            self.id = id;
-            self.hz = hz;
-            self.sensor
-                .write_command_async(ads1299::descriptors::Command::WAKEUP)
-                .await
-                .unwrap(); //// XXXXXXXXXXXXXXXXXXXX
+        pub async fn init(&mut self) -> Result<(), AdsError> {
+            let com = Command::WAKEUP;
+            match self.sensor.write_command_async(com).await {
+                Ok(_) => {}
+                Err(e) => {
+                    debug!("{:?}", e);
+                    return Err(AdsError::Command(com));
+                }
+            };
+
+            let com = Command::START;
+            match self.sensor.write_command_async(com).await {
+                Ok(_) => {}
+                Err(e) => {
+                    debug!("{:?}", e);
+                    return Err(AdsError::Command(com));
+                }
+            };
+
+            let com = Command::RDATAC;
+            match self.sensor.write_command_async(com).await {
+                Ok(_) => {}
+                Err(e) => {
+                    debug!("{:?}", e);
+                    return Err(AdsError::Command(com));
+                }
+            };
+
             let config = ads1299::ConfigRegisters {
                 config1: Config1::default(),
                 config2: Config2::default(),
@@ -394,20 +415,34 @@ pub mod yds1299 {
                 gpio: Gpio::default(),
             };
 
-            self.sensor
-                .apply_configuration_async(&config)
-                .await
-                .unwrap(); // XXXXXXXXXXXX
-            self.set_hz(hz);
-            Ok(())
+            match self.sensor.apply_configuration_async(&config).await {
+                Ok(_) => {
+                    debug!("Applying configuration OK");
+                }
+                Err(e) => {
+                    debug!("Applying configuration failed: {:?}", e);
+                    return Err(AdsError::Config);
+                }
+            }
+
+            if let Ok(r) = self.read().await {
+                defmt::debug!("First read: {:?}", r);
+                return Ok(());
+            } else {
+                defmt::debug!("Reading failed");
+                return Err(AdsError::Read);
+            }
         }
 
-        pub async fn read(&mut self) -> Result<Reading, ()> {
+        pub async fn read(&mut self) -> Result<Reading, AdsError> {
             //let reading: Reading = [self.sensor.read_data_1ch_async().await];
             let reading = self.sensor.read().await;
             match reading {
                 Ok(ads_data) => Ok(ads_data.voltage()),
-                _ => Err(()),
+                Err(_) => {
+                    debug!("Ads1299 read failed");
+                    Err(AdsError::Read)
+                }
             }
         }
 
