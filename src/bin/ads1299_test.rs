@@ -2,6 +2,7 @@
 #![no_main]
 
 use ads1299::descriptors::Command;
+use ylab::ysns::yds1299::AdsError;
 use defmt::debug;
 use defmt_rtt as _;
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
@@ -52,16 +53,16 @@ async fn main(spawner: Spawner) {
     spawner.spawn(bsu::task(usart)).unwrap();
 
     // pins (be sure these match your wiring)
-    let sck = p.PB10;
-    let mosi = p.PC3;
+    let sck = p.PB10; // check!
+    let mosi = p.PC3;  // check!
     let miso = p.PC2;
-    let cs_pin = p.PB9;
+    let cs_pin = p.PB9; // check!
 
     // SPI config
-    let spi_cfg = SpiConfig::default();
-    /*spi_cfg.frequency = 1_000_000;
-    spi_cfg.phase = embassy_stm32::spi::Phase::CaptureOnFirstTransition;
-    spi_cfg.polarity = embassy_stm32::spi::Polarity::IdleLow;*/
+    let mut spi_cfg = SpiConfig::default();
+    spi_cfg.frequency = embassy_stm32::time::Hertz(9200);
+    //spi_cfg.phase = embassy_stm32::spi::Phase::CaptureOnFirstTransition;
+    //spi_cfg.polarity = embassy_stm32::spi::Polarity::IdleLow;
 
     // --- IMPORTANT: pick DMA channels that are valid for SPI1 on F446ZE ---
     // Example channels — VERIFY these against `p` for your specific chip!
@@ -86,10 +87,19 @@ async fn main(spawner: Spawner) {
     let spi_dev = SpiDevice::new(spi_bus, cs);
     debug!("SPI device created");
 
+    //let drdy = embassy_stm32::gpio::Input::new(p.PF1, embassy_stm32::gpio::Pull::Up);
+
     // now create the ADS driver with the SpiDevice
     let mut sensor = yds1299::Sensor::new(spi_dev, 0, 100);
     debug!("Sensor device created");
-
+    match sensor.init().await {
+        Ok(_) => {
+            debug!("Sensor init OK");
+        }
+        Err(e) => {
+            debug!("Sensor init failed");
+        }
+    };
     /*match sensor.init().await {
         Ok(_) => {
             debug!("Sensor init OK");
@@ -99,12 +109,29 @@ async fn main(spawner: Spawner) {
         }
     };*/
 
-    if let Ok(_) = sensor.sensor.write_command_async(Command::RESET).await {
+    /*if let Ok(_) = sensor.sensor.write_command_async(Command::RESET).await {
         debug!("Sensor reset OK");
     }
-    if let Ok(_) = sensor.sensor.write_command_async(Command::WAKEUP).await {
-        debug!("Sensor wakeup OK");
+    if let Ok(_) = sensor.sensor.write_command_async(Command::SDATAC).await {
+        debug!("Sensor stopped OK");
     }
+    match sensor.sensor.apply_configuration_async(&config).await {
+        Ok(_) => {
+            debug!("Applying configuration OK");
+        }
+        Err(_) => {
+            debug!("Applying configuration failed");
+        }
+    }*/
+    if let Ok(_) = sensor.sensor.read_device_id_async().await {
+        debug!("Sensor ID OK");
+    } else {
+        debug!("Sensor ID Failure");
+    }
+    if let Ok(_) = sensor.sensor.write_command_async(Command::RDATA).await {
+        debug!("Sensor sampling OK");
+    }
+
     if let Ok(_) = sensor.sensor.write_command_async(Command::RDATAC).await {
         debug!("Sensor continuous sampling OK");
     }
@@ -112,11 +139,6 @@ async fn main(spawner: Spawner) {
         debug!("Sensor start OK");
     }
 
-    if let Ok(_) = sensor.sensor.read_device_id_async().await {
-        debug!("Sensor ID OK");
-    } else {
-        debug!("Sensor ID OK");
-    }
 
     let mut count = 0;
     loop {

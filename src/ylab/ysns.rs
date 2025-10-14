@@ -380,7 +380,7 @@ pub mod yds1299 {
                 }
             };
 
-            let com = Command::START;
+            let com = Command::RESET;
             match self.sensor.write_command_async(com).await {
                 Ok(_) => {}
                 Err(e) => {
@@ -389,7 +389,7 @@ pub mod yds1299 {
                 }
             };
 
-            let com = Command::RDATAC;
+            let com = Command::SDATAC;
             match self.sensor.write_command_async(com).await {
                 Ok(_) => {}
                 Err(e) => {
