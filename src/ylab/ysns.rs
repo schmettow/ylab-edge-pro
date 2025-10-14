@@ -403,7 +403,7 @@ pub mod yds1299 {
                 config2: Config2::default(),
                 config3: Config3::default(),
                 config4: Config4::default(),
-                loff: LoffStatNeg::default(),
+                loff: Loff::default(),
                 ch1set: Ch1Set::default(),
                 ch2set: Ch2Set::default(),
                 ch3set: Ch3Set::default(),
