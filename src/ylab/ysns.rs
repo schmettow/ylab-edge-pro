@@ -122,12 +122,13 @@ pub mod yco2 {
 }
 
 pub mod adc {
+    /// STM32
     pub use super::super::{hal, ytfk::bsu as ybsu, Channel, Mutex, Ordering};
     pub use super::*;
     use hal::peripherals::{ADC1, PA0, PA1, PA4, PB0, PC0, PC1, PC2, PC3};
     //use hal::peripherals::{ADC3, PF3, PF4, PF5, PF6, PF7, PF8, PF9, PF10};
     use hal::adc::{Adc, SampleTime};
-
+    ///
     const N: usize = 8;
     pub type Measure = u16;
     pub type Reading = [Measure; N];
@@ -147,8 +148,10 @@ pub mod adc {
 
     #[embassy_executor::task]
     pub async fn adcbank_1(
+        // STM32
         mut adc: Adc<'static, ADC1>,
         mut pins: (PA0, PA1, PA4, PB0, PC1, PC0, PC3, PC2),
+        //
         hz: u64,
         sensory: u8,
     ) {
