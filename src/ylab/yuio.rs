@@ -1,12 +1,12 @@
 
+pub use super::*;
+
 pub mod led {
+    pub use super::*;
     // LED control
-    use embassy_time::{Duration, Timer};
-    use embassy_time::Instant;
-    use super::hal as hal;
-    use hal::gpio::{AnyPin, Output, Level};
-    use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
-    use embassy_sync::signal::Signal;
+    //use embassy_time::Timer;
+    //use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
+    //use embassy_sync::signal::Signal;
     pub enum State {Vibrate, Blink, Steady, Interrupt, Off}
     pub static LED: Signal<CriticalSectionRawMutex, State> = Signal::new();
     

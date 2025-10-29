@@ -1,8 +1,8 @@
+pub use super::*;
+
 pub mod btn {
-    use embassy_time::{Duration, Timer, Instant};
-    use embassy_rp::gpio::{AnyPin, Input, Pull};
+    pub use super::*;
     use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
-    use embassy_sync::signal::Signal;
     pub enum Event {Press, Short, Long}
     pub static BTN: Signal<CriticalSectionRawMutex, Event> = Signal::new();
 

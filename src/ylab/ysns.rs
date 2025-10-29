@@ -2,14 +2,15 @@ pub use super::ytfk::bsu as ybsu;
 /// # YSNS
 /// provides interfaces to sensors.
 pub use super::*;
-use hal::i2c;
+use mcu::i2c;
 pub use ytfk::data::Sample as GenericSample;
+type MasterAsyncI2c = i2c::I2c<'static, mcu::mode::Async, mcu::i2c::Master>;
 
 pub mod moi {
     use super::*;
-    pub use hal::gpio::{Input, Pull};
-    pub use hal::peripherals::{PA10, PB3, PB4, PB5}; // D2 .. D5
-
+    pub use mcu::gpio::{Input, Pull};
+    pub use mcu::peripherals::{PA10, PB3, PB4, PB5}; // D2 .. D5
+    pub use mcu::exti::ExtiInput;
     pub type Measure = bool;
     pub type Reading<const N: usize> = [Measure; N];
     pub type Sample<const N: usize> = GenericSample<Measure, N>;
@@ -23,8 +24,8 @@ pub mod moi {
 
     #[embassy_executor::task]
     pub async fn task(
-        mut moi_0: ExtiInput<'static, PA10>,
-        mut moi_1: ExtiInput<'static, PB3>,
+        mut moi_0: ExtiInput<'static>, // PA10
+        mut moi_1: ExtiInput<'static>, // PB3
         sensory: u8,
     ) {
         //pub async fn task(pins: [AnyPin; 4], trigger: [(bool, Option<bool>); 4], hz: u64, sensory: u8) {
@@ -50,7 +51,7 @@ pub mod moi {
 
 pub mod yco2 {
     use super::*;
-    use hal::peripherals::I2C1 as ThisI2C;
+    //use mcu::peripherals::I2C1 as ThisI2C;
     use scd4x;
 
     /* control channels */
@@ -65,7 +66,7 @@ pub mod yco2 {
     pub type Sample = GenericSample<Measure, N>;
 
     #[embassy_executor::task]
-    pub async fn task(i2c: i2c::I2c<'static, ThisI2C>, sensory: u8) {
+    pub async fn task(i2c: MasterAsyncI2c, sensory: u8) {
         //DISP.signal([None, None, None, Some("CO2 start".try_into().unwrap())]);
         let mut sensor = scd4x::Scd4x::new(i2c, time::Delay); // <-- this makes it sybc or async
                                                               //sensor.wake_up(); <---- This fails
@@ -123,11 +124,11 @@ pub mod yco2 {
 
 pub mod adc {
     /// STM32
-    pub use super::super::{hal, ytfk::bsu as ybsu, Channel, Mutex, Ordering};
+    pub use super::{mcu, ytfk::bsu as ybsu, Channel, Mutex, Ordering};
     pub use super::*;
-    use hal::peripherals::{ADC1, PA0, PA1, PA4, PB0, PC0, PC1, PC2, PC3};
-    //use hal::peripherals::{ADC3, PF3, PF4, PF5, PF6, PF7, PF8, PF9, PF10};
-    use hal::adc::{Adc, SampleTime};
+    use mcu::peripherals::{ADC1, PA0, PA1, PA4, PB0, PC0, PC1, PC2, PC3};
+    //use mcu::peripherals::{ADC3, PF3, PF4, PF5, PF6, PF7, PF8, PF9, PF10};
+    use mcu::adc::{Adc, SampleTime};
     ///
     const N: usize = 8;
     pub type Measure = u16;
@@ -141,7 +142,7 @@ pub mod adc {
     pub static READY: AtomicBool = AtomicBool::new(false);
     pub static SAMPLE: AtomicBool = AtomicBool::new(true);
 
-    //type AdcPin: embedded_hal::adc::Channel<hal::adc::Adc<'static>> + hal::gpio::Pin;
+    //type AdcPin: embedded_hal::adc::Channel<mcu::adc::Adc<'static>> + mcu::gpio::Pin;
 
     /// Task for ADC controller 1 with eight pins
     ///
@@ -150,7 +151,8 @@ pub mod adc {
     pub async fn adcbank_1(
         // STM32
         mut adc: Adc<'static, ADC1>,
-        mut pins: (PA0, PA1, PA4, PB0, PC1, PC0, PC3, PC2),
+        mut pins: ( Peri<'static,PA0>, Peri<'static,PA1>, Peri<'static,PA4>, Peri<'static,PB0>, 
+                    Peri<'static,PC1>, Peri<'static,PC0>, Peri<'static,PC3>, Peri<'static,PC2>),
         //
         hz: u64,
         sensory: u8,
@@ -161,20 +163,21 @@ pub mod adc {
         let mut _vrefint = adc.enable_vrefint();
 
         let mut sample: Sample;
-        adc.set_sample_time(SampleTime::Cycles3);
-        adc.set_resolution(hal::adc::Resolution::TwelveBit);
+        adc.set_sample_time(SampleTime::CYCLES3);
+        adc.set_resolution(mcu::adc::Resolution::BITS12);
         //println!("ADC set");
         loop {
             if SAMPLE.load(ORD) {
                 let reading = [
-                    adc.read(&mut pins.0),
-                    adc.read(&mut pins.1),
-                    adc.read(&mut pins.2),
-                    adc.read(&mut pins.3),
-                    adc.read(&mut pins.4),
-                    adc.read(&mut pins.5),
-                    adc.read(&mut pins.6),
-                    adc.read(&mut pins.7),
+                    
+                    adc.blocking_read(&mut pins.1),
+                    adc.blocking_read(&mut pins.1),
+                    adc.blocking_read(&mut pins.2),
+                    adc.blocking_read(&mut pins.3),
+                    adc.blocking_read(&mut pins.4),
+                    adc.blocking_read(&mut pins.5),
+                    adc.blocking_read(&mut pins.6),
+                    adc.blocking_read(&mut pins.7),
                 ];
                 sample = Sample {
                     sensory: sensory,
@@ -192,7 +195,7 @@ pub mod yxz_lsm6 {
 
     use super::*;
     use accelerometer::Accelerometer;
-    use hal::peripherals::I2C1 as ThisI2C;
+    //use mcu::peripherals::I2C1 as ThisI2C;
     use lsm6dsox::*;
     use Lsm6dsox as Lsm6;
 
@@ -206,7 +209,7 @@ pub mod yxz_lsm6 {
     pub static SAMPLE: AtomicBool = AtomicBool::new(true);
 
     #[embassy_executor::task]
-    pub async fn task(i2c: i2c::I2c<'static, ThisI2C>, hz: u64, sensory: u8) {
+    pub async fn task(i2c: MasterAsyncI2c, hz: u64, sensory: u8) {
         let mut sensor = Lsm6::new(i2c, SlaveAddress::Low, time::Delay);
         let success = sensor.setup();
         match success {
@@ -255,7 +258,7 @@ pub mod yxz_lsm6 {
     use xca9548a::{SlaveAddr, Xca9548a};
     #[embassy_executor::task]
     pub async fn multi_task(
-        i2c: i2c::I2c<'static, ThisI2C>,
+        i2c: MasterAsyncI2c,
         n: u8,
         hz: u64,
         just_spin: bool,
@@ -318,7 +321,7 @@ pub mod yxz_lsm6 {
     }
 }
 
-pub mod yds1299 {
+/*pub mod yds1299 {
     use super::*;
     // Sensor
     use ads1299::descriptors::*;
@@ -461,7 +464,7 @@ pub mod yds1299 {
             }
         }
     }
-}
+}*/
 
 pub mod sen_five {
     use super::*;
@@ -548,10 +551,10 @@ pub mod sen_five {
         }
     }
 
-    use hal::peripherals::I2C1 as ThisI2C;
+    //use mcu::peripherals::I2C1 as ThisI2C;
 
     #[embassy_executor::task]
-    pub async fn task(i2c: i2c::I2c<'static, ThisI2C>, interval: Duration, sensory: u8) {
+    pub async fn task(i2c: MasterAsyncI2c, interval: Duration, sensory: u8) {
         let mut sensor = Sensor::new(i2c, time::Delay, sensory, interval);
         match sensor.init() {
             Err(_) => {

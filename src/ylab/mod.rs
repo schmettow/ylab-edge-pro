@@ -7,29 +7,35 @@ pub use core::sync::atomic::Ordering;
 pub use defmt::println;
 pub use defmt::Format;
 /// STM32
-pub use embassy_stm32 as hal;
-pub use hal::exti::ExtiInput;
+pub use embassy_stm32 as mcu;
+pub use mcu::gpio::{AnyPin, Pull, Input, Output, Level};
+pub use mcu::Peri;
+pub use mcu::exti::ExtiInput;
+pub use ylab_lib as yll;
+pub use yll::ydata as data;
+pub use data::Ytf;
+pub use yll::ybus::*;
+pub use yll::yuii;
+pub use yll::yuio;
+pub use yll::ysns as yllsns;
 
-pub use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex as RawMutex;
-pub use embassy_sync::channel::Channel;
-pub use embassy_sync::mutex::Mutex;
-pub use embassy_sync::signal::Signal;
-pub use embassy_time as time;
+pub use mcu::peripherals::I2C1;
+pub use mcu::peripherals::I2C2;
+pub use mcu::i2c::I2c;
+use mcu::mode::Async;
+//use embassy_embedded_hal as ehal;
+pub use ehal::shared_bus::asynch::i2c::I2cDevice;
 
-pub use heapless::{String, Vec};
-pub use time::{Delay, Duration, Instant, Ticker, Timer};
+type SharedBusMutexType = embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
+pub type SharedBusMutex<I> = embassy_sync::mutex::Mutex<SharedBusMutexType, I>;
+pub type SharedI2cBus<D> =
+    SharedBusMutex<mcu::i2c::I2c<'static, D, Async>>;
 
-/// Standard ordering for Arcs
-///
-/// Because STM32 chips don't do parallel computing
-/// we go with relaxed.
-pub static ORD: Ordering = Ordering::Relaxed;
+pub type I2c1 = I2cDevice<'static, SharedBusMutexType, I2c<'static, I2C1, Async>>;
 
-/// Sub modules
-///
-/// + YLab sensors
-pub mod ysns;
-/// + YLab transfer formats & kodices
+pub mod ysns; // Ylab sensors
 pub mod ytfk;
+//pub mod yuii; // YLab UI Input
+//pub mod yuio; // YLab UI Output // YLab transfer formats & kodices
 
-pub use ytfk::data::Ytf;
+
