@@ -28,10 +28,12 @@ pub use ehal::shared_bus::asynch::i2c::I2cDevice;
 
 type SharedBusMutexType = embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 pub type SharedBusMutex<I> = embassy_sync::mutex::Mutex<SharedBusMutexType, I>;
-pub type SharedI2cBus<D> =
-    SharedBusMutex<mcu::i2c::I2c<'static, D, Async>>;
+pub type SharedI2cBus =
+    SharedBusMutex<MasterAsyncI2c>;
 
-pub type I2c1 = I2cDevice<'static, SharedBusMutexType, I2c<'static, I2C1, Async>>;
+pub type MasterAsyncI2c = mcu::i2c::I2c<'static, mcu::mode::Async, mcu::i2c::Master>;
+//pub type I2c1 = I2cDevice<'static, SharedBusMutexType, I2c<'static, I2C1, Async>>;
+pub type SharedI2cDevice = I2cDevice<'static, SharedBusMutexType, I2c<'static, Async, mcu::i2c::Master>>;
 
 pub mod ysns; // Ylab sensors
 pub mod ytfk;

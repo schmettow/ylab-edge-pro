@@ -2,9 +2,8 @@ pub use super::ytfk::bsu as ybsu;
 /// # YSNS
 /// provides interfaces to sensors.
 pub use super::*;
-use mcu::i2c;
 pub use ytfk::data::Sample as GenericSample;
-type MasterAsyncI2c = i2c::I2c<'static, mcu::mode::Async, mcu::i2c::Master>;
+//type MasterAsyncI2c = i2c::I2c<'static, mcu::mode::Async, mcu::i2c::Master>;
 
 pub mod moi {
     use super::*;
