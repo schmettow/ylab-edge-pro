@@ -5,8 +5,8 @@
 use ylab::*;
 use ylab::mcu;
 use ylab::ysns::adc as yadc;
-use ylab::ysns::moi as moi;
 use ylab::ytfk::bsu as ybsu;
+use ylab_lib::ysns::moi;
 
 
 #[derive(Debug,  // used as fmt
@@ -47,13 +47,13 @@ async fn main(spawner: Spawner) {
     spawner.spawn(control_task()).unwrap();
     // MOI
     let moi_0
-        = ExtiInput::new(p.PA10,  p.EXTI10, moi::Pull::Down,);
+        = ExtiInput::new(p.PA10,  p.EXTI10, ylab::Pull::Down,);
     let moi_1
-        = ExtiInput::new(p.PB3, p.EXTI3, moi::Pull::Down);
+        = ExtiInput::new(p.PB3, p.EXTI3, ylab::Pull::Down);
     let moi_3
-        = ExtiInput::new(p.PD0,  p.EXTI0, moi::Pull::Down,);
+        = ExtiInput::new(p.PD0,  p.EXTI0, ylab::Pull::Down,);
     let moi_4
-        = ExtiInput::new(p.PD1, p.EXTI1, moi::Pull::Down);
+        = ExtiInput::new(p.PD1, p.EXTI1, ylab::Pull::Down);
     //spawner.spawn(ysns::moi::task(moi_0, moi_1, 0)).unwrap();
     spawner.spawn(moi_task(moi_0, moi_1, moi_3, moi_4)).unwrap();
 
@@ -93,7 +93,7 @@ async fn moi_task(
     pin_2: ExtiInput<'static>,
     pin_3: ExtiInput<'static>)
     {
-	ylab_lib::ysns::moi::inner_task(pin_0, pin_1, pin_2, pin_3, 0, ylab::ytfk::bsu::SINK.sender()).await;
+	moi::inner_task(pin_0, pin_1, pin_2, pin_3, 0, ylab::ytfk::bsu::SINK.sender()).await;
 }
 
 
@@ -101,5 +101,5 @@ async fn moi_task(
 async fn control_task() {
     let _state = AppState::Send;
     yadc::SAMPLE.store(true, ORD);
-    moi::SAMPLE.store(true, ORD);
+    //moi::SAMPLE.store(true, ORD);
 }

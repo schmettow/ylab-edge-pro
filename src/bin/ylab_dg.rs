@@ -5,9 +5,10 @@
 use embassy_stm32 as mcu;
 use ylab::*;
 use ylab::ysns::adc as yadc;
-use ylab::ysns::moi as moi;
 use ylab::ytfk::bsu as ybsu;
 
+use ylab_lib as yll;
+use yll::ysns::moi;
 
 #[derive(Debug,  // used as fmt
     Clone, Copy, // because next_state 
@@ -55,7 +56,7 @@ async fn main(spawner: Spawner) {
         = ExtiInput::new(p.PD1, p.EXTI1, moi::Pull::Down);
     //spawner.spawn(ysns::moi::task(moi_0, moi_1, 0)).unwrap();
     spawner.spawn(moi_task(moi_0, moi_1, moi_3, moi_4)).unwrap();
-
+    
     //ADC
     //let mut delay = Delay;
     let adc1 = adc::Adc::new(p.ADC1);
@@ -76,7 +77,7 @@ async fn moi_task(
     pin_2: ExtiInput<'static>,
     pin_3: ExtiInput<'static>)
     {
-	ylab_lib::ysns::moi::inner_task(pin_0, pin_1, pin_2, pin_3, 0, ylab::ytfk::bsu::SINK.sender()).await;
+	moi::inner_task(pin_0, pin_1, pin_2, pin_3, 0, ylab::ytfk::bsu::SINK.sender()).await;
 }
 
 
