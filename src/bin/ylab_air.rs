@@ -51,11 +51,11 @@ enum AppState {
 /// + Initializing peripherals
 /// + spawning tasks
 /// + assigning periphs to tasks
-use hal::adc;
-use hal::dma::NoDma;
-use hal::i2c;
-use hal::usart::{Config, Uart};
-use hal::{bind_interrupts, peripherals, usart};
+use mcu::adc;
+use mcu::dma::NoDma;
+use mcu::i2c;
+use mcu::usart::{Config, Uart};
+use mcu::{bind_interrupts, peripherals, usart};
 use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(struct Irqs {
@@ -69,7 +69,7 @@ use embassy_time::Delay;
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
-    let p = hal::init(Default::default());
+    let p = mcu::init(Default::default());
     let mut config = Config::default();
     config.baudrate = BAUD;
     let usart = p.USART2;
@@ -93,7 +93,7 @@ async fn main(spawner: Spawner) {
         Irqs,
         NoDma,
         NoDma,
-        hal::time::Hertz(100_000),
+        mcu::time::Hertz(100_000),
         Default::default(),
     );
 

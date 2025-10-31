@@ -13,9 +13,9 @@ use embassy_time::{Duration, Instant, Ticker};
 
 use embassy_stm32 as hal;
 
-use hal::dma::NoDma;
-use hal::usart::{Config, Uart};
-use hal::{bind_interrupts, peripherals, usart};
+use mcu::dma::NoDma;
+use mcu::usart::{Config, Uart};
+use mcu::{bind_interrupts, peripherals, usart};
 //use heapless::String;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -42,8 +42,8 @@ mod bsu {
 
     // USB
     use embassy_stm32 as hal;
-    use hal::peripherals;
-    use hal::usart::Uart;
+    use mcu::peripherals;
+    use mcu::usart::Uart;
 
     #[embassy_executor::task]
     pub async fn task(mut usart: Uart<'static, peripherals::USART3, peripherals::DMA1_CH3>) {
@@ -59,7 +59,7 @@ mod bsu {
 /* MAIN */
 #[embassy_executor::main]
 async fn init(spawner: Spawner) {
-    let p = hal::init(Default::default());
+    let p = mcu::init(Default::default());
 
     bind_interrupts!(struct Irqs {
         USART3 => usart::InterruptHandler<peripherals::USART3>;

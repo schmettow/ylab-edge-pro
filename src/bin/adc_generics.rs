@@ -5,7 +5,7 @@
 
 use ylab::hal;
 //use embassy_stm32::adc::AdcPin;
-use hal::adc::{Adc, AdcPin, Instance, SampleTime};
+use mcu::adc::{Adc, AdcPin, Instance, SampleTime};
 use {defmt_rtt as _, panic_probe as _};
 use embassy_time::{Delay, Ticker, Duration};
 use embassy_executor::Spawner;
@@ -29,7 +29,7 @@ pub async fn adc_task<P>(mut adc: Adc<'static, _>,
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
-    let p = hal::init(Default::default());
+    let p = mcu::init(Default::default());
     let mut delay = Delay;
     let adc0 = Adc::new(p.ADC1, &mut delay);
     spawner.spawn(adc_task(adc0, p.PC0, 2)).unwrap();

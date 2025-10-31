@@ -65,9 +65,9 @@ async fn main(spawner: Spawner) {
 }
 
 
-use mcu::gpio::Input;
+/*use mcu::gpio::Input;
 use mcu::gpio::Pull;
-use mcu::peripherals::{PD0, PD1, PD2, PD3};
+use mcu::peripherals::{PD0, PD1, PD2, PD3};*/
 
 #[embassy_executor::task]
 async fn moi_task(

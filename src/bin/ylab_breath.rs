@@ -1,43 +1,11 @@
 #![no_std]
 #![no_main]
 
-
-/// CONFIGURATION
-/// 
-/// Adc
-static DEV: [bool; 3] = [true, true, false];
-static HZ: [u64; 3] = [300, 50, 30];
-const BAUD: u32 = 2_000_000;
-
-/// # YLab Edge
-/// 
-/// __YLab Edge Pro__ is a sensor recording firmware for STM32 Nucleo boards.
-
-
-//use defmt::*;
-
-// use heapless::String;
-/// +  multi-threading with async
-/// + timing using Embassy time 
-/// + peripherals
-/// use embassy_stm32 as hal;
-/// + thread-safe data transfer and control
-/// 
-/// + built-in ADC sensors
 use ylab::*;
+use ylab::mcu;
 use ylab::ysns::adc as yadc;
-use ylab::ysns::yco2;
-/// + data transport/storage
+use ylab::ysns::moi as moi;
 use ylab::ytfk::bsu as ybsu;
-
-
-/// ## UI task
-/// 
-/// The ui task only signals the state 
-/// 
-//use ylab::yuio::disp as ydsp;
-/// 
-
 
 
 #[derive(Debug,  // used as fmt
@@ -45,48 +13,26 @@ use ylab::ytfk::bsu as ybsu;
     PartialEq, Eq, )] // testing equality
 enum AppState {Send}
 
-/// In a usual multi-threaded app you would write the interaction model
-/// in the main task. However, with dual-core the main task is no longer 
-/// async. Since all communication channels are static, this really doesn't matter.
-/// 
-/// The initial state is set and a signal is send to the LED.
-/// The event loop waits for button events (long or short press) 
-/// and changes the states, accordingly.
-/// If an actual state change has occured, the state is signaled to the UI 
-/// and initialized if that is necessary. In this case, entering Send 
-/// starts the sensor sampling.
-/// 
-/// From an architectural point of view, this is a nice setup, too. 
-/// Basically, we are separating the very different tasks of 
-/// peripherals/spawning and ui handling. It would be easy to just plugin a 
-/// different ui, by just reqriting this task. For example, another ui
-/// could use the RGB led to signal states, or collect commands from a serial console.
-///
-/// Conclusion so far: If we take the Embassy promise for granted, that async is zero-cost, 
-/// the separation of functionality into different tasks reduces dependencies. It introduces 
-/// the complexity of signalling.
-///
-/// ## Init
-/// 
-/// + Initializing peripherals 
-/// + spawning tasks
-/// + assigning periphs to tasks
 
-use hal::adc;
-use hal::dma::NoDma;
-use hal::usart::{Config, Uart};
-use hal::{bind_interrupts, peripherals, usart};
+use mcu::adc;
+use mcu::exti::ExtiInput;
+use mcu::usart::{Config, Uart};
+use mcu::i2c;
+use mcu::{bind_interrupts, peripherals, usart};
 use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(struct Irqs {
     USART2 => usart::InterruptHandler<peripherals::USART2>;
+    USART3 => usart::InterruptHandler<peripherals::USART3>;
+    I2C1_EV => i2c::EventInterruptHandler<peripherals::I2C1>;
+    I2C1_ER => i2c::ErrorInterruptHandler<peripherals::I2C1>;
 });
-use embassy_time::Delay;
-use embassy_executor::Spawner;
 
+use embassy_executor::Spawner;
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
-    let p = hal::init(Default::default());
+    let p = mcu::init(Default::default());
+    
     let mut config = Config::default();
     config.baudrate = BAUD;
     let usart = Uart::new(p.USART2, p.PA3, p.PA2, Irqs, p.DMA1_CH6, NoDma, config);
@@ -97,43 +43,31 @@ async fn main(spawner: Spawner) {
     spawner.spawn(control_task()).unwrap();
 
 
-    if DEV[0]{
-        let mut delay = Delay;
-        let adc1 = adc::Adc::new(p.ADC1, &mut delay);
-        spawner.spawn(yadc::adcbank_1(adc1, 
-                                    (p.PA0, p.PA1, p.PA4, p.PB0, p.PC1, p.PC0, p.PC3, p.PC2), 
-                                    HZ[0], 0)).unwrap();
-    };
-    
-    //#[cfg(feature = "lsm6-grove4")]
-    // Activating the second I2C controller on Grove 4
-    // and spawning a task for the LSM6 acceleration sensor
-    
-    if DEV[1]{
-        println!("I2C interrupts");
-        use hal::i2c;
-        bind_interrupts!(struct Irqs {
-            I2C1_EV => i2c::EventInterruptHandler<peripherals::I2C1>;
-            I2C1_ER => i2c::ErrorInterruptHandler<peripherals::I2C1>;
-        });
-        println!("I2C new");
-        let i2c1 = i2c::I2c::new(
-            p.I2C1,
-            p.PB8,
-            p.PB9,
-            Irqs,
-            NoDma,
-            NoDma,
-            hal::time::Hertz(100_000),
-            Default::default(),
-        );
-        println!("I2C OK");
-        //spawner.spawn(ydsp::task(i2c1)).unwrap();
-        //spawner.spawn(ylab::ysns::ads1015::task(i2c1, HZ[1])).unwrap();
-        spawner.spawn(ylab::ysns::yco2::task(i2c1, 1)).unwrap();
-        println!("I2C task ended");
-    }
+    // MOI
+    let moi_0
+        = ExtiInput::new(p.PA10,  p.EXTI10, moi::Pull::Down,);
+    let moi_1
+        = ExtiInput::new(p.PB3, p.EXTI3, moi::Pull::Down);
+    let moi_3
+        = ExtiInput::new(p.PD0,  p.EXTI0, moi::Pull::Down,);
+    let moi_4
+        = ExtiInput::new(p.PD1, p.EXTI1, moi::Pull::Down);
+    //spawner.spawn(ysns::moi::task(moi_0, moi_1, 0)).unwrap();
+    spawner.spawn(moi_task(moi_0, moi_1, moi_3, moi_4)).unwrap();
 
+    //ADC
+    //let mut delay = Delay;
+    let adc1 = adc::Adc::new(p.ADC1);
+    spawner.spawn(yadc::adcbank_1(adc1,
+                                (p.PA0, p.PA1, p.PA4, p.PB0, p.PC1, p.PC0, p.PC3, p.PC2),
+                                197, 1)).unwrap();
+
+
+    let i2c1 = I2c::new(p.I2C1, p.PB8, p.PB9, Irqs, p.DMA1_CH7, p.DMA1_CH0, Default::default());
+    static I2C_BUS_1: StaticCell<SharedI2cBus> = StaticCell::new();
+    let i2c_bus_1 = I2C_BUS_1.init(Mutex::new(i2c1));
+    let i2c11 = SharedI2cDevice::new(i2c_bus_1);
+    spawner.spawn(ylab::ysns::yco2::task(i2c11, 2)).unwrap();
 }
 
 /// ## Control task
