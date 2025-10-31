@@ -2,8 +2,8 @@
 #![no_main]
 
 
-use embassy_stm32 as mcu;
 use ylab::*;
+use ylab::mcu;
 use ylab::ysns::adc as yadc;
 use ylab::ysns::moi as moi;
 use ylab::ytfk::bsu as ybsu;
@@ -16,8 +16,6 @@ enum AppState {Send}
 
 use mcu::adc;
 use mcu::exti::ExtiInput;
-/// USB
-//use mcu::dma::NoDma;
 use mcu::usart::{Config, Uart};
 use mcu::i2c;
 use mcu::{bind_interrupts, peripherals, usart};

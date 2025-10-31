@@ -190,7 +190,7 @@ pub mod adc {
     }
 }
 
-pub mod yxz_lsm6 {
+/*pub mod yxz_lsm6 {
 
     use super::*;
     use accelerometer::Accelerometer;
@@ -318,15 +318,15 @@ pub mod yxz_lsm6 {
             };
         }
     }
-}
+}*/
 
-/*pub mod yds1299 {
+pub mod yds1299 {
     use super::*;
     // Sensor
-    use ads1299::descriptors::*;
+    pub use ads1299::descriptors::*;
     use ads1299::Ads129x;
     //use ads1299::AdsData;
-    use ads1299::SensorVersion;
+    pub use ads1299::SensorVersion;
     // SPI Bus
     use embedded_hal_async::spi::SpiDevice;
     use log::debug;
@@ -463,7 +463,7 @@ pub mod yxz_lsm6 {
             }
         }
     }
-}*/
+}
 
 pub mod sen_five {
     use super::*;

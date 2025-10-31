@@ -54,10 +54,10 @@ nb = "1.1.0"
 #scd4x = { version = "0.3.0", default-features=false, features = ["scd41"] }
 scd4x = { version = "0.4.1" }
 ryu = "1.0.20"
-lsm6dsox = "2.0.0"
+#lsm6dsox = "2.0.0"
 xca9548a = "1.0.0"
 embedded-hal-async = "1.0.0"
-#ads129xx = "0.2.1"
-#ads1299 = { path = "../ads1299-rs" }
+ads1299 =  { path = "../ylab-sensors/async-ads1299-rs" }
+#lsm6dsox = { path = "../ylab-sensors/async-lsm6dsox-rs" }
 embedded-hal = "1.0.0"
 sen5x-rs = "0.2.1"
