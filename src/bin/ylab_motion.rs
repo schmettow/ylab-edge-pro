@@ -34,7 +34,7 @@ use embassy_executor::Spawner;
 async fn main(spawner: Spawner) {
     let p = mcu::init(Default::default());
     let mut config = Config::default();
-    config.baudrate = 100_000;
+    config.baudrate = 2_000_000;
     let usart = p.USART2;
     let tx = p.PA3;
     let rx = p.PA2;
@@ -42,7 +42,7 @@ async fn main(spawner: Spawner) {
     let usart = Uart::new(usart, tx, rx, Irqs, p.DMA1_CH6, p.DMA1_CH5, config);
     match usart {
         Ok(usart) => spawner.spawn(ybsu::task(usart)).unwrap(),
-        Err(_)  => {println!("USART connection failed")},
+        Err(_)  => {log::debug!("USART connection failed")},
     }
     spawner.spawn(control_task()).unwrap();
     // MOI
