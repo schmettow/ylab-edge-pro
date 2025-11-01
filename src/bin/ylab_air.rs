@@ -26,6 +26,8 @@ bind_interrupts!(struct Irqs {
     USART3 => usart::InterruptHandler<peripherals::USART3>;
     I2C1_EV => i2c::EventInterruptHandler<peripherals::I2C1>;
     I2C1_ER => i2c::ErrorInterruptHandler<peripherals::I2C1>;
+    I2C3_EV => i2c::EventInterruptHandler<peripherals::I2C3>;
+    I2C3_ER => i2c::ErrorInterruptHandler<peripherals::I2C3>;
 });
 
 use embassy_executor::Spawner;
@@ -68,9 +70,15 @@ async fn main(spawner: Spawner) {
     let i2c1 = I2c::new(p.I2C1, p.PB8, p.PB9, Irqs, p.DMA1_CH7, p.DMA1_CH0, Default::default());
     static I2C_BUS_1: StaticCell<SharedI2cBus> = StaticCell::new();
     let i2c_bus_1 = I2C_BUS_1.init(Mutex::new(i2c1));
-    let i2c11 = SharedI2cDevice::new(i2c_bus_1);
 
+    let i2c3 = I2c::new(p.I2C3, p.PA8, p.PC9, Irqs, p.DMA1_CH4, p.DMA1_CH2, Default::default());
+    static I2C_BUS_3: StaticCell<SharedI2cBus> = StaticCell::new();
+    let i2c_bus_3 = I2C_BUS_3.init(Mutex::new(i2c3));
+
+    let i2c11 = SharedI2cDevice::new(i2c_bus_1);
     spawner.spawn(sen5_task(i2c11)).unwrap();
+    let i2c31 = SharedI2cDevice::new(i2c_bus_3);
+    spawner.spawn(co2_task(i2c31)).unwrap();
 
 
 }
@@ -83,6 +91,11 @@ use mcu::peripherals::{PD0, PD1, PD2, PD3};*/
 #[embassy_executor::task]
 async fn sen5_task(i2c: SharedI2cDevice) {
     ylab_lib::ysns::sen_five::task(i2c,  Duration::from_secs(5), 2, ytfk::bsu::SINK.sender()).await;
+}
+
+#[embassy_executor::task]
+async fn co2_task(i2c: SharedI2cDevice) {
+	ylab_lib::ysns::yco2::task(i2c,  2, ytfk::bsu::SINK.sender()).await;
 }
 
 
