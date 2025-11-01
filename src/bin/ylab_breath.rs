@@ -4,18 +4,20 @@
 use ylab::*;
 use ylab::mcu;
 use ylab::ysns::adc as yadc;
-use ylab::ysns::moi as moi;
+use ylab_lib::ysns::moi;
+use ylab_lib::ysns::sen_five
 use ylab::ytfk::bsu as ybsu;
 
 
 #[derive(Debug,  // used as fmt
-    Clone, Copy, // because next_state 
+    Clone, Copy, // because next_state
     PartialEq, Eq, )] // testing equality
 enum AppState {Send}
 
 
 use mcu::adc;
 use mcu::exti::ExtiInput;
+use ylab::ytfk::bsu;
 use mcu::usart::{Config, Uart};
 use mcu::i2c;
 use mcu::{bind_interrupts, peripherals, usart};
@@ -32,26 +34,30 @@ use embassy_executor::Spawner;
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let p = mcu::init(Default::default());
-    
+
     let mut config = Config::default();
-    config.baudrate = BAUD;
-    let usart = Uart::new(p.USART2, p.PA3, p.PA2, Irqs, p.DMA1_CH6, NoDma, config);
+    config.baudrate = 2_000_000;
+    let usart = p.USART2;
+    let tx = p.PA3;
+    let rx = p.PA2;
+    //let usart_dma = p.DMA1_CH6;
+    let usart = Uart::new(usart, tx, rx, Irqs, p.DMA1_CH6, p.DMA1_CH5, config);
     match usart {
-        Ok(usart) => spawner.spawn(ybsu::task(usart)).unwrap(),
-        Err(_)  => {},
+        Ok(usart) => spawner.spawn(bsu::task(usart)).unwrap(),
+        Err(_)  => {log::debug!("USART connection failed")},
     }
     spawner.spawn(control_task()).unwrap();
 
 
     // MOI
     let moi_0
-        = ExtiInput::new(p.PA10,  p.EXTI10, moi::Pull::Down,);
+        = ExtiInput::new(p.PA10,  p.EXTI10, ylab::Pull::Down,);
     let moi_1
-        = ExtiInput::new(p.PB3, p.EXTI3, moi::Pull::Down);
+        = ExtiInput::new(p.PB3, p.EXTI3, ylab::Pull::Down);
     let moi_3
-        = ExtiInput::new(p.PD0,  p.EXTI0, moi::Pull::Down,);
+        = ExtiInput::new(p.PD0,  p.EXTI0, ylab::Pull::Down,);
     let moi_4
-        = ExtiInput::new(p.PD1, p.EXTI1, moi::Pull::Down);
+        = ExtiInput::new(p.PD1, p.EXTI1, ylab::Pull::Down);
     //spawner.spawn(ysns::moi::task(moi_0, moi_1, 0)).unwrap();
     spawner.spawn(moi_task(moi_0, moi_1, moi_3, moi_4)).unwrap();
 
@@ -71,12 +77,24 @@ async fn main(spawner: Spawner) {
 }
 
 /// ## Control task
-/// 
+///
 /// bare minimum for Pro
+
+use ylab::ysns::yco2;
+
+#[embassy_executor::task]
+async fn moi_task(
+    pin_0: ExtiInput<'static>,
+    pin_1: ExtiInput<'static>,
+    pin_2: ExtiInput<'static>,
+    pin_3: ExtiInput<'static>)
+    {
+	moi::inner_task(pin_0, pin_1, pin_2, pin_3, 0, ylab::ytfk::bsu::SINK.sender()).await;
+}
 
 
 #[embassy_executor::task]
-async fn control_task() { 
+async fn control_task() {
     let _state = AppState::Send;
 
     loop {
@@ -96,20 +114,18 @@ async fn control_task() {
             break
         }
     }
-    
-    
+
+
     yco2::SAMPLE.store(true, ORD);
 }
 
 /*pub use core::sync::atomic::Ordering;
 //use ydsp::{FourLines, OneLine};
 #[embassy_executor::task]
-async fn control_task() { 
+async fn control_task() {
     let _state = AppState::Send;
     yadc::SAMPLE.store(true, Ordering::Relaxed);
     let title: OneLine = "YLab".try_into().unwrap();
     let disp_text: FourLines = [ Some(title) ,None, None, None];
     ydsp::TEXT.signal(disp_text);
 }*/
-        
-
