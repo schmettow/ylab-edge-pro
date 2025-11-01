@@ -5,8 +5,6 @@ use ylab::*;
 use ylab::mcu;
 use ylab::ysns::adc as yadc;
 use ylab_lib::ysns::moi;
-use ylab_lib::ysns::sen_five
-use ylab::ytfk::bsu as ybsu;
 
 
 #[derive(Debug,  // used as fmt
@@ -73,14 +71,17 @@ async fn main(spawner: Spawner) {
     static I2C_BUS_1: StaticCell<SharedI2cBus> = StaticCell::new();
     let i2c_bus_1 = I2C_BUS_1.init(Mutex::new(i2c1));
     let i2c11 = SharedI2cDevice::new(i2c_bus_1);
-    spawner.spawn(ylab::ysns::yco2::task(i2c11, 2)).unwrap();
+    spawner.spawn(co2_task(i2c11)).unwrap();
 }
 
 /// ## Control task
 ///
 /// bare minimum for Pro
 
-use ylab::ysns::yco2;
+#[embassy_executor::task]
+async fn co2_task(i2c: SharedI2cDevice) {
+	ylab_lib::ysns::yco2::task(i2c,  2, ytfk::bsu::SINK.sender()).await;
+}
 
 #[embassy_executor::task]
 async fn moi_task(
@@ -106,7 +107,7 @@ async fn control_task() {
         }
     }
 
-    loop {
+    /*loop {
         Timer::after_millis(5).await;
         if yco2::READY.load(ORD) {
             yco2::SAMPLE.store(true, ORD);
@@ -116,7 +117,7 @@ async fn control_task() {
     }
 
 
-    yco2::SAMPLE.store(true, ORD);
+    yco2::SAMPLE.store(true, ORD);*/
 }
 
 /*pub use core::sync::atomic::Ordering;
