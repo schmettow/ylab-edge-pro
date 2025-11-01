@@ -26,6 +26,8 @@ bind_interrupts!(struct Irqs {
     USART3 => usart::InterruptHandler<peripherals::USART3>;
     I2C1_EV => i2c::EventInterruptHandler<peripherals::I2C1>;
     I2C1_ER => i2c::ErrorInterruptHandler<peripherals::I2C1>;
+    I2C3_EV => i2c::EventInterruptHandler<peripherals::I2C3>;
+    I2C3_ER => i2c::ErrorInterruptHandler<peripherals::I2C3>;
 });
 
 use embassy_executor::Spawner;
@@ -72,7 +74,7 @@ async fn main(spawner: Spawner) {
 
     spawner.spawn(lsm6_multi_task(i2c11)).unwrap();
 
-    
+
 }
 
 
@@ -84,6 +86,11 @@ use mcu::peripherals::{PD0, PD1, PD2, PD3};*/
 async fn lsm6_multi_task(i2c: SharedI2cDevice) {
     ylab_lib::ysns::yxz_lsm6::inner_multi_task(i2c, 6, 101, 2, false, ytfk::bsu::SINK.sender()).await;
 }
+
+/*#[embassy_executor::task]
+async fn lsm6_multi_task(i2c: SharedI2cDevice) {
+    ylab_lib::ysns::::inner_multi_task(i2c, 6, 101, 2, false, ytfk::bsu::SINK.sender()).await;
+}*/
 
 
 #[embassy_executor::task]
