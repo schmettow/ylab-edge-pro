@@ -6,15 +6,13 @@ const BAUD: u32 = 2_000_000;
 use ylab_lib as yll;
 use ylab::mcu;
 
-use mcu::mode::Async;
-
+use ylab::ytfk::bsu;
 use mcu::usart::{Config, Uart};
 use mcu::{bind_interrupts, peripherals, usart};
 
+use mcu::mode::Async;
 //use mcu::peripherals::{DMA1_CH3, DMA1_CH4, SPI2};
 use mcu::spi::{Config as SpiConfig, Spi};
-
-use ylab::ytfk::bsu;
 
 //use ads129x::{Ads129x, ConfigRegisters, Error};
 use yll::ysns::yds1299 as yds;
