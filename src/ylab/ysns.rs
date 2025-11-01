@@ -44,8 +44,7 @@ pub mod adc {
         loop {
             if SAMPLE.load(ORD) {
                 let reading = [
-
-                    adc.blocking_read(&mut pins.1),
+                	adc.blocking_read(&mut pins.0),
                     adc.blocking_read(&mut pins.1),
                     adc.blocking_read(&mut pins.2),
                     adc.blocking_read(&mut pins.3),
