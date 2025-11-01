@@ -48,7 +48,7 @@ pub mod moi {
     }
 }
 
-pub mod yco2 {
+/*pub mod yco2 {
     use super::*;
     //use mcu::peripherals::I2C1 as ThisI2C;
     use scd4x;
@@ -64,10 +64,16 @@ pub mod yco2 {
     /// <--- 4 channel is total accel for now
     pub type Sample = GenericSample<Measure, N>;
 
-    #[embassy_executor::task]
-    pub async fn task(i2c: MasterAsyncI2c, sensory: u8) {
-        //DISP.signal([None, None, None, Some("CO2 start".try_into().unwrap())]);
-        let mut sensor = scd4x::Scd4x::new(i2c, time::Delay); // <-- this makes it sybc or async
+    //#[embassy_executor::task]
+
+    use ehal::adapter::{BlockingAsync, YieldingAsync};
+    pub async fn inner_task<I>(i2c_bus: &'static SharedI2cBus, hz: u64, sensory: u8)
+    where
+        I: mcu::i2c::Instance,
+    {
+        let i2c = SharedI2cDevice::new(&i2c_bus);
+        let i2c = YieldingAsync::new(i2c);
+        let mut sensor = scd4x::Scd4x::new(i2c.into(), time::Delay); // <-- this makes it sybc or async
                                                               //sensor.wake_up(); <---- This fails
         println!("Starting up SCD41");
         match sensor.stop_periodic_measurement() {
@@ -119,7 +125,7 @@ pub mod yco2 {
             };
         }
     }
-}
+}*/
 
 pub mod adc {
     /// STM32
@@ -150,7 +156,7 @@ pub mod adc {
     pub async fn adcbank_1(
         // STM32
         mut adc: Adc<'static, ADC1>,
-        mut pins: ( Peri<'static,PA0>, Peri<'static,PA1>, Peri<'static,PA4>, Peri<'static,PB0>, 
+        mut pins: ( Peri<'static,PA0>, Peri<'static,PA1>, Peri<'static,PA4>, Peri<'static,PB0>,
                     Peri<'static,PC1>, Peri<'static,PC0>, Peri<'static,PC3>, Peri<'static,PC2>),
         //
         hz: u64,
@@ -168,7 +174,7 @@ pub mod adc {
         loop {
             if SAMPLE.load(ORD) {
                 let reading = [
-                    
+
                     adc.blocking_read(&mut pins.1),
                     adc.blocking_read(&mut pins.1),
                     adc.blocking_read(&mut pins.2),
